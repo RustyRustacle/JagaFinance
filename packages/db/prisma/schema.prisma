@@ -1,0 +1,473 @@
+// ============================================================
+// VAULTLEDGER PRISMA SCHEMA
+// ============================================================
+// PostgreSQL + Supabase + Multi-tenant with RLS
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ======================
+// ENUMS
+// ======================
+
+enum Role {
+  ADMIN
+  FINANCE
+  VIEWER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  DECLINED
+}
+
+enum ReceiptStatus {
+  UPLOADED
+  PROCESSING
+  COMPLETED
+  FAILED
+  REJECTED
+}
+
+enum ExpenseStatus {
+  DRAFT
+  CONFIRMED
+  RECONCILED
+  VOID
+}
+
+enum BudgetPeriod {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum AlertChannel {
+  EMAIL
+  WEBHOOK
+  IN_APP
+}
+
+enum WebhookEvent {
+  RECEIPT_UPLOADED
+  RECEIPT_PROCESSED
+  BUDGET_EXCEEDED
+  EXPENSE_CREATED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  INVITE_SEND
+  INVITE_ACCEPT
+  EXPORT
+}
+
+// ======================
+// CORE MODELS
+// ======================
+
+model Tenant {
+  id               String           @id @default(uuid())
+  name             String           @db.VarChar(255)
+  slug             String           @unique @db.VarChar(50)
+  industry         String?          @db.VarChar(100)
+  currency         String           @default("IDR") @db.VarChar(3)
+  fiscalYearStart  String           @default("01-01") @map("fiscal_year_start") @db.VarChar(5)
+  timezone         String           @default("Asia/Jakarta") @db.VarChar(50)
+  language         String           @default("id") @db.VarChar(5)
+  plan             String           @default("FREE") @db.VarChar(20)
+  settings         Json             @default("{}")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  members          TenantMember[]
+  invites          Invite[]
+  receipts         Receipt[]
+  expenseCategories ExpenseCategory[]
+  expenses         Expense[]
+  budgets          Budget[]
+  budgetAlerts     BudgetAlert[]
+  apiKeys          ApiKey[]
+  webhooks         Webhook[]
+  auditLogs        AuditLog[]
+  exportJobs       ExportJob[]
+
+  @@map("tenants")
+}
+
+model User {
+  id        String         @id
+  email     String         @db.VarChar(255)
+  name      String?        @db.VarChar(255)
+  avatarUrl String?        @map("avatar_url") @db.Text
+  phone     String?        @db.VarChar(20)
+  locale    String         @default("id") @db.VarChar(5)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  memberships   TenantMember[]
+  invitedBy     TenantMember[] @relation("UserInvitedBy")
+  invites       Invite[]     @relation("UserCreatedInvites")
+  receipts      Receipt[]
+  receiptVerifications ReceiptData[] @relation("UserVerifiedReceipts")
+  expenses      Expense[]
+  apiKeys       ApiKey[]
+  revokedApiKeys ApiKey[]    @relation("UserRevokedApiKeys")
+  webhooks      Webhook[]
+  auditLogs     AuditLog[]
+  exportJobs    ExportJob[]
+
+  @@map("users")
+}
+
+model TenantMember {
+  id         String     @id @default(uuid())
+  tenantId   String     @map("tenant_id")
+  userId     String     @map("user_id")
+  role       Role       @default(VIEWER)
+  status     InviteStatus @default(PENDING)
+  invitedBy  String?    @map("invited_by")
+  invitedAt  DateTime   @default(now()) @map("invited_at")
+  acceptedAt DateTime?  @map("accepted_at")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inviter    User?      @relation("UserInvitedBy", fields: [invitedBy], references: [id])
+
+  @@unique([tenantId, userId])
+  @@map("tenant_members")
+}
+
+model Invite {
+  id         String       @id @default(uuid())
+  tenantId   String       @map("tenant_id")
+  email      String       @db.VarChar(255)
+  role       Role         @default(VIEWER)
+  token      String       @unique @db.VarChar(255)
+  status     InviteStatus @default(PENDING)
+  expiresAt  DateTime     @map("expires_at")
+  createdBy  String?      @map("created_by")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  acceptedAt DateTime?    @map("accepted_at")
+
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  creator    User?        @relation("UserCreatedInvites", fields: [createdBy], references: [id])
+
+  @@map("invites")
+}
+
+// ======================
+// RECEIPT & OCR
+// ======================
+
+model Receipt {
+  id              String        @id @default(uuid())
+  tenantId        String        @map("tenant_id")
+  uploadedBy      String        @map("uploaded_by")
+  fileUrl         String        @map("file_url") @db.Text
+  fileName        String        @map("file_name") @db.VarChar(500)
+  fileType        String        @map("file_type") @db.VarChar(50)
+  fileSize        Int           @map("file_size")
+  status          ReceiptStatus @default(UPLOADED)
+  ocrProvider     String?       @default("google_vision") @map("ocr_provider") @db.VarChar(50)
+  ocrConfidence   Decimal?      @map("ocr_confidence") @db.Decimal(5, 2)
+  ocrRawResponse  Json?         @map("ocr_raw_response")
+  errorMessage    String?       @map("error_message") @db.Text
+  processedAt     DateTime?     @map("processed_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploader        User          @relation(fields: [uploadedBy], references: [id])
+  receiptData     ReceiptData?
+  expense         Expense?
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("receipts")
+}
+
+model ReceiptData {
+  id              String     @id @default(uuid())
+  receiptId       String     @unique @map("receipt_id")
+
+  merchantName    String?    @map("merchant_name") @db.VarChar(255)
+  merchantAddress String?    @map("merchant_address") @db.Text
+  merchantPhone   String?    @map("merchant_phone") @db.VarChar(20)
+  taxId           String?    @map("tax_id") @db.VarChar(50)
+
+  receiptNumber   String?    @map("receipt_number") @db.VarChar(100)
+  transactionDate DateTime?  @map("transaction_date")
+  subtotal        Decimal?   @db.Decimal(15, 2)
+  taxAmount       Decimal?   @map("tax_amount") @db.Decimal(15, 2)
+  taxRate         Decimal?   @map("tax_rate") @db.Decimal(5, 2)
+  discountAmount  Decimal?   @map("discount_amount") @db.Decimal(15, 2)
+  totalAmount     Decimal    @map("total_amount") @db.Decimal(15, 2)
+  currency        String     @default("IDR") @db.VarChar(3)
+  paymentMethod   String?    @map("payment_method") @db.VarChar(50)
+
+  lineItems       Json?      @map("line_items")
+
+  isVerified      Boolean    @default(false) @map("is_verified")
+  verifiedBy      String?    @map("verified_by")
+  verificationNotes String?  @map("verification_notes") @db.Text
+
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  receipt         Receipt    @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  verifier        User?      @relation("UserVerifiedReceipts", fields: [verifiedBy], references: [id])
+
+  @@index([receiptId])
+  @@map("receipt_data")
+}
+
+// ======================
+// EXPENSES & CATEGORIES
+// ======================
+
+model ExpenseCategory {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  name       String   @db.VarChar(100)
+  nameEn     String?  @map("name_en") @db.VarChar(100)
+  color      String   @default("#6B7280") @db.VarChar(7)
+  icon       String?  @db.VarChar(50)
+  parentId   String?  @map("parent_id")
+  isActive   Boolean  @default(true) @map("is_active")
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent     ExpenseCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children   ExpenseCategory[] @relation("CategoryHierarchy")
+  expenses   Expense[]
+  budgets    Budget[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("expense_categories")
+}
+
+model Expense {
+  id             String        @id @default(uuid())
+  tenantId       String        @map("tenant_id")
+  receiptId      String?       @unique @map("receipt_id")
+  categoryId     String        @map("category_id")
+  createdBy      String        @map("created_by")
+
+  title          String        @db.VarChar(255)
+  description    String?       @db.Text
+  amount         Decimal       @db.Decimal(15, 2)
+  currency       String        @default("IDR") @db.VarChar(3)
+  expenseDate    DateTime      @map("expense_date")
+  paymentMethod  String?       @map("payment_method") @db.VarChar(50)
+  status         ExpenseStatus @default(DRAFT)
+
+  journalEntryId String?       @map("journal_entry_id") @db.VarChar(100)
+  costCenter     String?       @map("cost_center") @db.VarChar(100)
+  projectCode    String?       @map("project_code") @db.VarChar(100)
+  taxDeductible  Boolean       @default(false) @map("tax_deductible")
+
+  tags           String[]
+  metadata       Json          @default("{}")
+
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  receipt        Receipt?      @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+  category       ExpenseCategory @relation(fields: [categoryId], references: [id])
+  creator        User          @relation(fields: [createdBy], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, expenseDate(sort: Desc)])
+  @@index([tenantId, status])
+  @@index([tenantId, createdBy])
+  @@map("expenses")
+}
+
+// ======================
+// BUDGETS & ALERTS
+// ======================
+
+model Budget {
+  id              String       @id @default(uuid())
+  tenantId        String       @map("tenant_id")
+  categoryId      String       @map("category_id")
+
+  amount          Decimal      @db.Decimal(15, 2)
+  currency        String       @default("IDR") @db.VarChar(3)
+  period          BudgetPeriod @default(MONTHLY)
+  startDate       DateTime     @map("start_date")
+  endDate         DateTime     @map("end_date")
+
+  alertThreshold  Decimal      @default(80.00) @map("alert_threshold") @db.Decimal(5, 2)
+  isActive        Boolean      @default(true) @map("is_active")
+
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category        ExpenseCategory @relation(fields: [categoryId], references: [id])
+  alerts          BudgetAlert[]
+
+  @@unique([tenantId, categoryId, startDate, endDate, period])
+  @@index([tenantId])
+  @@index([tenantId, categoryId])
+  @@map("budgets")
+}
+
+model BudgetAlert {
+  id             String       @id @default(uuid())
+  tenantId       String       @map("tenant_id")
+  budgetId       String       @map("budget_id")
+
+  triggeredAt    DateTime     @default(now()) @map("triggered_at")
+  currentAmount  Decimal      @map("current_amount") @db.Decimal(15, 2)
+  budgetAmount   Decimal      @map("budget_amount") @db.Decimal(15, 2)
+  percentageUsed Decimal      @map("percentage_used") @db.Decimal(5, 2)
+  channel        AlertChannel @default(EMAIL)
+  recipientEmail String       @map("recipient_email") @db.VarChar(255)
+  status         String       @default("SENT") @db.VarChar(20)
+  errorMessage   String?      @map("error_message") @db.Text
+
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  tenant         Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  budget         Budget       @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  @@index([budgetId])
+  @@map("budget_alerts")
+}
+
+// ======================
+// API KEYS & WEBHOOKS
+// ======================
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  tenantId   String    @map("tenant_id")
+  name       String    @db.VarChar(100)
+  keyHash    String    @map("key_hash") @db.VarChar(255)
+  keyPrefix  String    @map("key_prefix") @db.VarChar(10)
+  permissions String[]
+  lastUsedAt DateTime? @map("last_used_at")
+  expiresAt  DateTime? @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  revokedBy  String?   @map("revoked_by")
+  createdBy  String    @map("created_by")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  creator    User      @relation(fields: [createdBy], references: [id])
+  revoker    User?     @relation("UserRevokedApiKeys", fields: [revokedBy], references: [id])
+
+  @@index([tenantId])
+  @@map("api_keys")
+}
+
+model Webhook {
+  id          String          @id @default(uuid())
+  tenantId    String          @map("tenant_id")
+  url         String          @db.Text
+  secret      String          @db.VarChar(255)
+  events      WebhookEvent[]
+  isActive    Boolean         @default(true) @map("is_active")
+  createdBy   String          @map("created_by")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  creator     User            @relation(fields: [createdBy], references: [id])
+  deliveries  WebhookDelivery[]
+
+  @@index([tenantId])
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id           String       @id @default(uuid())
+  webhookId    String       @map("webhook_id")
+  eventType    WebhookEvent @map("event_type")
+  payload      Json
+  status       String       @default("PENDING") @db.VarChar(20)
+  responseCode Int?         @map("response_code")
+  responseBody String?      @map("response_body") @db.Text
+  attempt      Int          @default(1)
+  maxAttempts  Int          @default(3) @map("max_attempts")
+  nextRetryAt  DateTime?    @map("next_retry_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  webhook      Webhook      @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@map("webhook_deliveries")
+}
+
+// ======================
+// AUDIT LOGS
+// ======================
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  tenantId   String      @map("tenant_id")
+  userId     String?     @map("user_id")
+  action     AuditAction
+  entityType String      @map("entity_type") @db.VarChar(50)
+  entityId   String?     @map("entity_id")
+  changes    Json?
+  ipAddress  String?     @map("ip_address") @db.VarChar(45)
+  userAgent  String?     @map("user_agent") @db.Text
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+// ======================
+// EXPORT JOBS
+// ======================
+
+model ExportJob {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  requestedBy String   @map("requested_by")
+  format      String   @db.VarChar(10)
+  exportType  String   @map("export_type") @db.VarChar(50)
+  filters     Json     @default("{}")
+  fileUrl     String?  @map("file_url") @db.Text
+  status      String   @default("PENDING") @db.VarChar(20)
+  errorMessage String? @map("error_message") @db.Text
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  requester   User     @relation(fields: [requestedBy], references: [id])
+
+  @@index([tenantId])
+  @@map("export_jobs")
+}

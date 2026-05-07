@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+*.local
+.env
+.env.*
+!.env.example
+.DS_Store
+*.tsbuildinfo
+.turbo/
+coverage/
+.vscode/settings.json
