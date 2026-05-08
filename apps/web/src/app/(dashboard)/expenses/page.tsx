@@ -48,7 +48,7 @@ export default function ExpensesPage() {
           ) : (
             <div className="space-y-3">
               {expenses.map((exp: Record<string, unknown>) => (
-                <div key={exp.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <div key={exp.id as string} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">{exp.title as string}</p>
                     <p className="text-xs text-gray-500">{(exp.category as Record<string, unknown>)?.name as string} &middot; {formatDate(exp.expenseDate as string)}</p>

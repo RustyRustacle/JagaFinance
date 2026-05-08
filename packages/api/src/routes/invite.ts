@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import crypto from "crypto";
-import { prisma } from "@vaultledger/db";
+import { prisma, InviteStatus } from "@vaultledger/db";
 import { supabase } from "../lib/supabase";
 import { authMiddleware, AuthRequest, financeOrAdmin } from "../middleware/auth";
 import { validate } from "../middleware/validate";
@@ -87,7 +87,7 @@ inviteRouter.get(
     const invites = await prisma.invite.findMany({
       where: {
         tenantId: req.user!.tenantId,
-        ...(status && { status }),
+        ...(status && { status: status as InviteStatus }),
       },
       orderBy: { createdAt: "desc" },
     });

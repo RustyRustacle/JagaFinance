@@ -73,12 +73,14 @@ authRouter.post("/register", validate(registerSchema), async (req, res) => {
     userId: authUser.user.id,
     tenantId: tenant.id,
     role: "ADMIN",
+    email,
   });
 
   const refreshToken = generateRefreshToken({
     userId: authUser.user.id,
     tenantId: tenant.id,
     role: "ADMIN",
+    email,
   });
 
   res.status(201).json({
@@ -132,12 +134,14 @@ authRouter.post("/login", validate(loginSchema), async (req, res) => {
     userId: authData.user.id,
     tenantId: defaultMembership.tenantId,
     role: defaultMembership.role,
+    email: authData.user.email ?? "",
   });
 
   const refreshToken = generateRefreshToken({
     userId: authData.user.id,
     tenantId: defaultMembership.tenantId,
     role: defaultMembership.role,
+    email: authData.user.email ?? "",
   });
 
   res.json({
@@ -172,6 +176,7 @@ authRouter.post("/refresh", async (req, res) => {
     userId: decoded.userId,
     tenantId: decoded.tenantId,
     role: decoded.role,
+    email: decoded.email ?? "",
   });
 
   res.json({

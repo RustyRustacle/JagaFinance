@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { AppError } from "./errorHandler";
-import { Role } from "@prisma/client";
-import { prisma } from "@vaultledger/db";
+import { prisma, Role } from "@vaultledger/db";
 
 export interface AuthRequest extends Request {
   user?: {
@@ -34,6 +33,7 @@ export const authMiddleware = async (
       userId: string;
       tenantId: string;
       role: Role;
+      email?: string;
     };
 
     const member = await prisma.tenantMember.findFirst({

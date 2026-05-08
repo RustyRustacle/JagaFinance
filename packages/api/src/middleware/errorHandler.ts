@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@vaultledger/db";
 
 export class AppError extends Error {
   public statusCode: number;

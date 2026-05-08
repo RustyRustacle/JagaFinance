@@ -34,11 +34,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950">
       <Sidebar items={navItems} pathname={pathname} />
       <div className="lg:pl-64">
         <Header />
-        <main className="p-6">{children}</main>
+        <main className="p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma, Prisma } from "@vaultledger/db";
 import { authMiddleware, AuthRequest, financeOrAdmin, adminOnly } from "../middleware/auth";
 import { AppError } from "../middleware/errorHandler";
+import { ExpenseStatus } from "@vaultledger/db";
 import { enqueueBudgetAlert } from "../lib/queue";
 
 export const expenseRouter = Router();
@@ -104,28 +105,36 @@ expenseRouter.post(
 
 expenseRouter.get("/", async (req: AuthRequest, res) => {
   const parsed = listQuerySchema.safeParse(req.query);
-  const query = parsed.success ? parsed.data : { page: 1, limit: 20, sort: "expense_date", order: "desc" };
+  const query = parsed.success ? parsed.data : { page: 1, limit: 20, sort: "expense_date", order: "desc" as const };
 
-  const where: Record<string, unknown> = {
+  const where: Prisma.ExpenseWhereInput = {
     tenantId: req.user!.tenantId,
   };
 
-  if (query.category_id) where.categoryId = query.category_id;
-  if (query.status) where.status = query.status;
-  if (query.created_by) where.createdBy = query.created_by;
-  if (query.search) {
+  const qCategoryId = "category_id" in query ? query.category_id : undefined;
+  const qStatus = "status" in query ? query.status : undefined;
+  const qCreatedBy = "created_by" in query ? query.created_by : undefined;
+  const qSearch = "search" in query ? query.search : undefined;
+  const qDateFrom = "date_from" in query ? query.date_from : undefined;
+  const qDateTo = "date_to" in query ? query.date_to : undefined;
+  const qTags = "tags" in query ? query.tags : undefined;
+
+  if (qCategoryId) where.categoryId = qCategoryId;
+  if (qStatus) where.status = qStatus as ExpenseStatus;
+  if (qCreatedBy) where.createdBy = qCreatedBy;
+  if (qSearch) {
     where.OR = [
-      { title: { contains: query.search, mode: "insensitive" } },
-      { description: { contains: query.search, mode: "insensitive" } },
+      { title: { contains: qSearch, mode: "insensitive" } },
+      { description: { contains: qSearch, mode: "insensitive" } },
     ];
   }
-  if (query.date_from || query.date_to) {
+  if (qDateFrom || qDateTo) {
     where.expenseDate = {};
-    if (query.date_from) (where.expenseDate as Record<string, unknown>).gte = new Date(query.date_from);
-    if (query.date_to) (where.expenseDate as Record<string, unknown>).lte = new Date(query.date_to);
+    if (qDateFrom) where.expenseDate.gte = new Date(qDateFrom);
+    if (qDateTo) where.expenseDate.lte = new Date(qDateTo);
   }
-  if (query.tags) {
-    where.tags = { hasSome: query.tags.split(",") };
+  if (qTags) {
+    where.tags = { hasSome: qTags.split(",") };
   }
 
   const [expenses, total] = await Promise.all([

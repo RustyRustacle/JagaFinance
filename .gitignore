@@ -12,3 +12,5 @@ out/
 .turbo/
 coverage/
 .vscode/settings.json
+credentials/
+AGENTS.md

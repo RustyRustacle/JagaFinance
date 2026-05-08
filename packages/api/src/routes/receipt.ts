@@ -3,9 +3,11 @@ import multer from "multer";
 import { z } from "zod";
 import path from "path";
 import { prisma, ReceiptStatus } from "@vaultledger/db";
+import type { Prisma } from "@vaultledger/db";
 import { supabase } from "../lib/supabase";
 import { authMiddleware, AuthRequest, financeOrAdmin, adminOnly } from "../middleware/auth";
 import { AppError } from "../middleware/errorHandler";
+import { validate } from "../middleware/validate";
 import { enqueueOCR } from "../lib/queue";
 
 export const receiptRouter = Router();
@@ -101,17 +103,21 @@ receiptRouter.post(
 
 receiptRouter.get("/", async (req: AuthRequest, res) => {
   const parsed = listQuerySchema.safeParse(req.query);
-  const query = parsed.success ? parsed.data : { page: 1, limit: 20, sort: "created_at", order: "desc" };
+  const query = parsed.success ? parsed.data : { page: 1, limit: 20, sort: "created_at", order: "desc" as const };
 
-  const where: Record<string, unknown> = {
+  const where: Prisma.ReceiptWhereInput = {
     tenantId: req.user!.tenantId,
   };
 
-  if (query.status) where.status = query.status as ReceiptStatus;
-  if (query.date_from || query.date_to) {
+  const qStatus = "status" in query ? query.status : undefined;
+  const qDateFrom = "date_from" in query ? query.date_from : undefined;
+  const qDateTo = "date_to" in query ? query.date_to : undefined;
+
+  if (qStatus) where.status = qStatus as ReceiptStatus;
+  if (qDateFrom || qDateTo) {
     where.createdAt = {};
-    if (query.date_from) (where.createdAt as Record<string, unknown>).gte = new Date(query.date_from);
-    if (query.date_to) (where.createdAt as Record<string, unknown>).lte = new Date(query.date_to);
+    if (qDateFrom) where.createdAt.gte = new Date(qDateFrom);
+    if (qDateTo) where.createdAt.lte = new Date(qDateTo);
   }
 
   const [receipts, total] = await Promise.all([
@@ -221,12 +227,13 @@ receiptRouter.post(
           data: updateData,
         });
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await prisma.receiptData.create({
           data: {
             receiptId: req.params.id,
             ...updateData,
-            totalAmount: corrections.total_amount ?? receipt.receiptData?.totalAmount ?? 0,
-          },
+            totalAmount: corrections.total_amount ?? 0,
+          } as any,
         });
       }
     }
