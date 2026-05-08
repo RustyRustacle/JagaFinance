@@ -28,8 +28,12 @@ export const authMiddleware = async (
   }
 
   const token = authHeader.split(" ")[1];
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    // PENTING: Gunakan Buffer.from agar sama dengan cara token dibuat
+    const secret = Buffer.from(process.env.JWT_SECRET!, 'base64');
+
+    const decoded = jwt.verify(token, secret) as {
       userId: string;
       tenantId: string;
       role: Role;
@@ -57,6 +61,9 @@ export const authMiddleware = async (
 
     next();
   } catch (error) {
+    // Log error di terminal supaya kamu bisa pantau
+    console.error("JWT Verification Error:", error);
+
     if (error instanceof jwt.JsonWebTokenError) {
       throw new AppError(401, "AUTH_REQUIRED", "Invalid or expired token");
     }

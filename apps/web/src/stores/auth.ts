@@ -6,14 +6,15 @@ interface AuthState {
   refreshToken: string | null;
   user: { id: string; email: string; name?: string } | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  // GANTI void menjadi any supaya bisa mengembalikan data token
+  login: (email: string, password: string) => Promise<any>; 
   register: (data: {
     email: string;
     password: string;
     name: string;
     tenantName: string;
     tenantSlug: string;
-  }) => Promise<void>;
+  }) => Promise<any>; // GANTI void menjadi any
   logout: () => void;
   setToken: (token: string) => void;
 }
@@ -54,12 +55,16 @@ export const useAuthStore = create<AuthState>()(
 
         localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
+        
         set({
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
           user: data.user,
           isAuthenticated: true,
         });
+
+        // TAMBAHKAN INI: Supaya data bisa dipakai di login/page.tsx
+        return data; 
       },
 
       register: async (data) => {
@@ -70,12 +75,16 @@ export const useAuthStore = create<AuthState>()(
 
         localStorage.setItem("accessToken", result.accessToken);
         localStorage.setItem("refreshToken", result.refreshToken);
+        
         set({
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
           user: result.user,
           isAuthenticated: true,
         });
+
+        // TAMBAHKAN INI
+        return result; 
       },
 
       logout: () => {

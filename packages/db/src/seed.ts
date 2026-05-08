@@ -28,11 +28,19 @@ async function main() {
 
   console.log(`Created tenant: ${tenant.name}`);
 
+  // const user = await prisma.user.create({
+  //   data: {
+  //     id: "00000000-0000-0000-0000-000000000001",
+  //     email: "admin@demo.com",
+  //     name: "Demo Admin",
+  //   },
+  // });
+
   const user = await prisma.user.create({
     data: {
-      id: "00000000-0000-0000-0000-000000000001",
-      email: "admin@demo.com",
-      name: "Demo Admin",
+      id: "687f5611-f739-48fa-a836-b985e689ad45",
+      email: "daniel@gmail.com",
+      name: "Daniel",
     },
   });
 

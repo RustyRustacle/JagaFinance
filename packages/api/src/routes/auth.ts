@@ -23,80 +23,80 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+// function generateToken(payload: Record<string, string>) {
+//   return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "1h" });
+// }
+
+// function generateRefreshToken(payload: Record<string, string>) {
+//   return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "7d" });
+// }
+
 function generateToken(payload: Record<string, string>) {
-  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "1h" });
+  // Kita harus men-decode JWT_SECRET dari Base64 ke Buffer
+  const secret = Buffer.from(process.env.JWT_SECRET!, 'base64');
+  
+  return jwt.sign(
+    {
+      ...payload,
+      aud: "authenticated",           // WAJIB untuk Supabase
+      role: "authenticated",          // WAJIB untuk Supabase
+      sub: payload.userId,            // WAJIB: ID User
+    },
+    secret,                           // Gunakan secret yang sudah jadi Buffer
+    { expiresIn: "1h", algorithm: "HS256" }
+  );
 }
 
 function generateRefreshToken(payload: Record<string, string>) {
-  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "7d" });
+  const secret = Buffer.from(process.env.JWT_SECRET!, 'base64');
+  
+  return jwt.sign(
+    {
+      ...payload,
+      aud: "authenticated",
+      role: "authenticated",
+      sub: payload.userId,
+    },
+    secret,
+    { expiresIn: "7d", algorithm: "HS256" }
+  );
 }
 
-authRouter.post("/register", validate(registerSchema), async (req, res) => {
-  const { email, password, name, tenantName, tenantSlug, language } = req.body;
+authRouter.post("/login", validate(loginSchema), async (req, res) => {
+  const { email, password } = req.body;
 
-  const existing = await supabase.auth.admin.listUsers();
-  const userExists = existing.data.users.some((u) => u.email === email);
-  if (userExists) {
-    throw new AppError(409, "DUPLICATE", "Email already registered");
-  }
-
-  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+  // 1. Login ke Supabase secara resmi
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
     email,
     password,
-    email_confirm: true,
-    user_metadata: { name },
   });
 
-  if (authError || !authUser.user) {
-    throw new AppError(400, "AUTH_ERROR", authError?.message || "Failed to create user");
+  if (error || !authData.user || !authData.session) {
+    throw new AppError(401, "AUTH_REQUIRED", "Invalid email or password");
   }
 
-  const tenant = await prisma.tenant.create({
-    data: {
-      name: tenantName,
-      slug: tenantSlug,
-      language,
-    },
+  // ... (Logika Prisma kamu tetap di sini untuk cek membership) ...
+  const memberships = await prisma.tenantMember.findMany({
+    where: { userId: authData.user.id, status: "ACCEPTED" },
+    include: { tenant: true }
   });
 
-  await prisma.tenantMember.create({
-    data: {
-      tenantId: tenant.id,
-      userId: authUser.user.id,
-      role: "ADMIN",
-      status: "ACCEPTED",
-      acceptedAt: new Date(),
-    },
-  });
+  if (memberships.length === 0) throw new AppError(403, "FORBIDDEN", "No active tenant");
 
-  const accessToken = generateToken({
-    userId: authUser.user.id,
-    tenantId: tenant.id,
-    role: "ADMIN",
-    email,
-  });
+  // 2. JANGAN pakai generateToken(). Pakai token asli dari Supabase!
+  const accessToken = authData.session.access_token; 
+  const refreshToken = authData.session.refresh_token;
 
-  const refreshToken = generateRefreshToken({
-    userId: authUser.user.id,
-    tenantId: tenant.id,
-    role: "ADMIN",
-    email,
-  });
-
-  res.status(201).json({
+  res.json({
     success: true,
     data: {
       user: {
-        id: authUser.user.id,
-        email,
-        name,
+        id: authData.user.id,
+        email: authData.user.email,
+        name: authData.user.user_metadata?.name,
       },
-      tenant: {
-        id: tenant.id,
-        name: tenantName,
-        slug: tenantSlug,
-      },
-      accessToken,
+      tenants: memberships.map((m) => ({ id: m.tenant.id, role: m.role })),
+      accessToken, // Ini sekarang token ASLI Supabase
       refreshToken,
     },
   });
