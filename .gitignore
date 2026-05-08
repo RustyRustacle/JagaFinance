@@ -14,3 +14,4 @@ coverage/
 .vscode/settings.json
 credentials/
 AGENTS.md
+.opencode/
