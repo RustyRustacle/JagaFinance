@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { supabase } from "@/lib/supabase";
 
 interface AuthState {
   accessToken: string | null;
@@ -18,8 +19,7 @@ interface AuthState {
   setToken: (token: string) => void;
 }
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
 async function fetchAPI(endpoint: string, options: RequestInit) {
   const res = await fetch(`${API_URL}${endpoint}`, {
@@ -52,8 +52,16 @@ export const useAuthStore = create<AuthState>()(
           body: JSON.stringify({ email, password }),
         });
 
+        const { error } = await supabase.auth.setSession({
+          access_token: data.accessToken,
+          refresh_token: data.refreshToken,
+        });
+
+        if (error) throw error;
+
         localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
+
         set({
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
@@ -68,8 +76,16 @@ export const useAuthStore = create<AuthState>()(
           body: JSON.stringify(data),
         });
 
+        const { error } = await supabase.auth.setSession({
+          access_token: result.accessToken,
+          refresh_token: result.refreshToken,
+        });
+
+        if (error) throw error;
+
         localStorage.setItem("accessToken", result.accessToken);
         localStorage.setItem("refreshToken", result.refreshToken);
+
         set({
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
@@ -78,9 +94,26 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      logout: () => {
+      logout: async () => {
+        const accessToken = localStorage.getItem("accessToken");
+        if (accessToken) {
+          try {
+            await fetch(`${API_URL}/auth/logout`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+            });
+          } catch {
+            
+          }
+        }
+
+        await supabase.auth.signOut();
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
+
         set({
           accessToken: null,
           refreshToken: null,
