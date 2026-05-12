@@ -15,7 +15,9 @@
     "db:studio": "turbo --filter=@jagafinance/db studio",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:reset": "docker-compose down -v && docker-compose up -d"
+    "docker:reset": "docker-compose down -v && docker-compose up -d",
+    "blockchain:compile": "pnpm --filter=@jagafinance/blockchain compile",
+    "blockchain:deploy": "pnpm --filter=@jagafinance/blockchain deploy:base-sepolia"
   },
   "devDependencies": {
     "turbo": "^2.0.0"
