@@ -19,7 +19,8 @@ interface AuthState {
   setToken: (token: string) => void;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
 async function fetchAPI(endpoint: string, options: RequestInit) {
   const res = await fetch(`${API_URL}${endpoint}`, {
@@ -56,12 +57,10 @@ export const useAuthStore = create<AuthState>()(
           access_token: data.accessToken,
           refresh_token: data.refreshToken,
         });
-
         if (error) throw error;
 
         localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
-
         set({
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
@@ -80,12 +79,10 @@ export const useAuthStore = create<AuthState>()(
           access_token: result.accessToken,
           refresh_token: result.refreshToken,
         });
-
         if (error) throw error;
 
         localStorage.setItem("accessToken", result.accessToken);
         localStorage.setItem("refreshToken", result.refreshToken);
-
         set({
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
@@ -106,14 +103,14 @@ export const useAuthStore = create<AuthState>()(
               },
             });
           } catch {
-            
+            // Ignore logout API errors
           }
         }
 
         await supabase.auth.signOut();
+
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-
         set({
           accessToken: null,
           refreshToken: null,
@@ -127,7 +124,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: "vaultledger-auth",
+      name: "jagafinance-auth",
       partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,

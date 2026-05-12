@@ -1,5 +1,5 @@
 {
-  "name": "@vaultledger/api",
+  "name": "@jagafinance/api",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -13,7 +13,7 @@
   "dependencies": {
     "@google-cloud/vision": "^5.3.6",
     "@supabase/supabase-js": "^2.45.0",
-    "@vaultledger/db": "workspace:*",
+    "@jagafinance/db": "workspace:*",
     "bcrypt": "^5.1.1",
     "bullmq": "^5.10.0",
     "cors": "^2.8.5",

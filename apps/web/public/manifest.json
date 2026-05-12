@@ -1,6 +1,6 @@
 {
-  "name": "VaultLedger - Receipt & Expense Intelligence",
-  "short_name": "VaultLedger",
+  "name": "JagaFinance - Receipt & Expense Intelligence",
+  "short_name": "JagaFinance",
   "description": "Digitize physical receipts into financial reports instantly",
   "start_url": "/dashboard",
   "display": "standalone",

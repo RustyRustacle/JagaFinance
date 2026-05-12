@@ -1,7 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import { createClient } from "@supabase/supabase-js";
 import { AppError } from "./errorHandler";
-import { prisma, Role } from "@vaultledger/db";
+import { prisma, Role } from "@jagafinance/db";
+
+const supabaseAnon = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
+);
 
 export interface AuthRequest extends Request {
   user?: {
@@ -28,40 +33,31 @@ export const authMiddleware = async (
   }
 
   const token = authHeader.split(" ")[1];
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      userId: string;
-      tenantId: string;
-      role: Role;
-      email?: string;
-    };
 
-    const member = await prisma.tenantMember.findFirst({
-      where: {
-        userId: decoded.userId,
-        tenantId: decoded.tenantId,
-        status: "ACCEPTED",
-      },
-    });
-
-    if (!member) {
-      throw new AppError(403, "FORBIDDEN", "Access denied to this tenant");
-    }
-
-    req.user = {
-      id: decoded.userId,
-      email: decoded.email as string,
-      tenantId: decoded.tenantId,
-      role: member.role,
-    };
-
-    next();
-  } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      throw new AppError(401, "AUTH_REQUIRED", "Invalid or expired token");
-    }
-    throw error;
+  const { data: { user }, error } = await supabaseAnon.auth.getUser(token);
+  if (error || !user) {
+    throw new AppError(401, "AUTH_REQUIRED", error?.message || "Invalid or expired token");
   }
+
+  const membership = await prisma.tenantMember.findFirst({
+    where: {
+      userId: user.id,
+      status: "ACCEPTED",
+    },
+  });
+
+  if (!membership) {
+    throw new AppError(403, "FORBIDDEN", "No active tenant membership");
+  }
+
+  req.user = {
+    id: user.id,
+    email: user.email ?? "",
+    tenantId: membership.tenantId,
+    role: membership.role,
+  };
+
+  next();
 };
 
 export function requireRole(...roles: Role[]) {

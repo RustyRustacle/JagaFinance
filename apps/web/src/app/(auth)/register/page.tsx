@@ -8,7 +8,6 @@ import { useAuthStore } from "@/stores/auth";
 export default function RegisterPage() {
   const router = useRouter();
   const register = useAuthStore((state) => state.register);
-
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -16,7 +15,6 @@ export default function RegisterPage() {
     tenantName: "",
     tenantSlug: "",
   });
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -39,11 +37,7 @@ export default function RegisterPage() {
     setForm((prev) => ({
       ...prev,
       tenantName: value,
-      tenantSlug: value
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "-")
-        .replace(/-+/g, "-")
-        .replace(/^-|-$/g, ""),
+      tenantSlug: value.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, ""),
     }));
   };
 
@@ -60,7 +54,6 @@ export default function RegisterPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Full Name */}
         <div>
           <label
             htmlFor="name"
@@ -79,7 +72,6 @@ export default function RegisterPage() {
           />
         </div>
 
-        {/* Email */}
         <div>
           <label
             htmlFor="email"
@@ -98,7 +90,6 @@ export default function RegisterPage() {
           />
         </div>
 
-        {/* Password */}
         <div>
           <label
             htmlFor="password"
@@ -110,7 +101,9 @@ export default function RegisterPage() {
             id="password"
             type="password"
             value={form.password}
-            onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, password: e.target.value }))
+            }
             required
             minLength={8}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -118,11 +111,11 @@ export default function RegisterPage() {
           />
         </div>
 
-        {/* Company Information Section */}
         <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
             Company Information
           </p>
+
           <div className="space-y-3">
             <div>
               <label
@@ -150,9 +143,7 @@ export default function RegisterPage() {
                 Workspace URL
               </label>
               <div className="flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  vaultledger.com/
-                </span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">jagafinance.com/</span>
                 <input
                   id="tenantSlug"
                   type="text"

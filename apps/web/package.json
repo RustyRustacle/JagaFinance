@@ -1,5 +1,5 @@
 {
-  "name": "@vaultledger/web",
+  "name": "@jagafinance/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,7 +12,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.4.0",
     "@supabase/supabase-js": "^2.45.0",
-    "@vaultledger/db": "workspace:*",
+    "@jagafinance/db": "workspace:*",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",

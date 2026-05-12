@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "VaultLedger - Receipt & Expense Intelligence",
+  title: "JagaFinance - Receipt & Expense Intelligence",
   description: "B2B SaaS platform for digitizing physical receipts into financial reports instantly",
   manifest: "/manifest.json",
   themeColor: "#3B82F6",

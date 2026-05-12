@@ -15,7 +15,7 @@ const nextConfig = {
       },
     ],
   },
-  transpilePackages: ["@vaultledger/db"],
+  transpilePackages: ["@jagafinance/db"],
 };
 
 module.exports = withPWA(nextConfig);
