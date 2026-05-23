@@ -53,7 +53,7 @@ categoryRouter.get("/", async (req: AuthRequest, res) => {
   res.json({ success: true, data: categories });
 });
 
-categoryRouter.post("/", financeOrAdmin, async (req: AuthRequest, res) => {
+categoryRouter.post("/", financeOrAdmin, validate(createCategorySchema), async (req: AuthRequest, res) => {
   const data = req.body;
 
   const category = await prisma.expenseCategory.create({
@@ -71,7 +71,7 @@ categoryRouter.post("/", financeOrAdmin, async (req: AuthRequest, res) => {
   res.status(201).json({ success: true, data: category });
 });
 
-categoryRouter.patch("/:id", financeOrAdmin, async (req: AuthRequest, res) => {
+categoryRouter.patch("/:id", financeOrAdmin, validate(updateCategorySchema), async (req: AuthRequest, res) => {
   const data = req.body;
 
   const category = await prisma.expenseCategory.update({

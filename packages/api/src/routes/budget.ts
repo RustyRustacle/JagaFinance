@@ -42,7 +42,7 @@ budgetRouter.get("/", async (req: AuthRequest, res) => {
   res.json({ success: true, data: budgets });
 });
 
-budgetRouter.post("/", financeOrAdmin, async (req: AuthRequest, res) => {
+budgetRouter.post("/", financeOrAdmin, validate(createBudgetSchema), async (req: AuthRequest, res) => {
   const data = req.body;
 
   const budget = await prisma.budget.create({
@@ -62,7 +62,7 @@ budgetRouter.post("/", financeOrAdmin, async (req: AuthRequest, res) => {
   res.status(201).json({ success: true, data: budget });
 });
 
-budgetRouter.patch("/:id", financeOrAdmin, async (req: AuthRequest, res) => {
+budgetRouter.patch("/:id", financeOrAdmin, validate(updateBudgetSchema), async (req: AuthRequest, res) => {
   const data = req.body;
 
   if (data.start_date) data.startDate = new Date(data.start_date);

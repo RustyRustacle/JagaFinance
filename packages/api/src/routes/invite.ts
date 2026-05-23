@@ -170,16 +170,14 @@ inviteRouter.post(
       },
     });
 
-    const jwt = require("jsonwebtoken");
-    const accessToken = jwt.sign(
-      {
-        userId: authUser.user.id,
-        tenantId: invite.tenantId,
-        role: invite.role,
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: "1h" }
-    );
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: invite.email,
+      password,
+    });
+
+    if (signInError || !signInData?.session) {
+      throw new AppError(400, "AUTH_ERROR", "Failed to create session after account creation");
+    }
 
     res.status(201).json({
       success: true,
@@ -190,7 +188,8 @@ inviteRouter.post(
           name,
         },
         tenant: invite.tenant,
-        accessToken,
+        accessToken: signInData.session.access_token,
+        refreshToken: signInData.session.refresh_token,
       },
     });
   }

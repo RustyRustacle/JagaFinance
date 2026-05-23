@@ -161,9 +161,11 @@ CREATE POLICY "invites_view" ON "public"."invites"
 CREATE POLICY "invites_manage" ON "public"."invites"
   FOR ALL USING (has_tenant_role_any(tenant_id, ARRAY['ADMIN', 'FINANCE']));
 
--- Anyone can accept an invite (no auth required for accept endpoint)
+-- Anyone can accept an invite by token (no auth required for accept endpoint)
 CREATE POLICY "invites_accept" ON "public"."invites"
-  FOR UPDATE USING (true) WITH CHECK (true);
+  FOR UPDATE USING (true) WITH CHECK (
+    status = 'ACCEPTED' AND accepted_at IS NOT NULL
+  );
 
 -- ======================
 -- TRIGGERS

@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { validate } from "../middleware/validate";
 import { authMiddleware, AuthRequest } from "../middleware/auth";
 import { AppError } from "../middleware/errorHandler";
+import { createAuditLog } from "../lib/audit";
 
 export const authRouter = Router();
 
@@ -86,6 +87,15 @@ authRouter.post("/register", validate(registerSchema), async (req, res) => {
       refreshToken: signInData.session.refresh_token,
     },
   });
+
+  createAuditLog({
+    tenantId: tenant.id,
+    userId: authUser.user.id,
+    action: "LOGIN",
+    entityType: "User",
+    entityId: authUser.user.id,
+    req,
+  });
 });
 
 authRouter.post("/login", validate(loginSchema), async (req, res) => {
@@ -132,6 +142,18 @@ authRouter.post("/login", validate(loginSchema), async (req, res) => {
       refreshToken: authData.session!.refresh_token,
     },
   });
+
+  const primaryTenant = memberships[0];
+  if (primaryTenant) {
+    createAuditLog({
+      tenantId: primaryTenant.tenant.id,
+      userId: authData.user.id,
+      action: "LOGIN",
+      entityType: "User",
+      entityId: authData.user.id,
+      req,
+    });
+  }
 });
 
 authRouter.post("/refresh", async (req, res) => {
@@ -162,5 +184,15 @@ authRouter.post("/logout", authMiddleware, async (req: AuthRequest, res) => {
       throw new AppError(500, "LOGOUT_ERROR", error.message);
     }
   }
+
+  createAuditLog({
+    tenantId: req.user!.tenantId,
+    userId: req.user!.id,
+    action: "LOGOUT",
+    entityType: "User",
+    entityId: req.user!.id,
+    req,
+  });
+
   res.json({ success: true });
 });

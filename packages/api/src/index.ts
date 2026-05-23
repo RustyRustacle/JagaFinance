@@ -32,9 +32,11 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const limiter = rateLimit({
+const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: {
     success: false,
     error: {
@@ -43,7 +45,38 @@ const limiter = rateLimit({
     },
   },
 });
-app.use("/api/v1/", limiter);
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: "RATE_LIMITED",
+      message: "Too many auth attempts, please try again later.",
+    },
+  },
+});
+
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: "RATE_LIMITED",
+      message: "Too many uploads, please try again later.",
+    },
+  },
+});
+
+app.use("/api/v1/", generalLimiter);
+app.use("/api/v1/auth", authLimiter);
+app.use("/api/v1/receipts/upload", uploadLimiter);
 
 app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/auth", authRouter);

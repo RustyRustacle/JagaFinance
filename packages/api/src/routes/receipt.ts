@@ -10,6 +10,7 @@ import { AppError } from "../middleware/errorHandler";
 import { validate } from "../middleware/validate";
 import { enqueueOCR } from "../lib/queue";
 import { submitReceiptToBlockchain } from "../services/blockchain";
+import { createAuditLog } from "../lib/audit";
 
 export const receiptRouter = Router();
 
@@ -98,6 +99,16 @@ receiptRouter.post(
     res.status(201).json({
       success: true,
       data: receipt,
+    });
+
+    createAuditLog({
+      tenantId: req.user!.tenantId,
+      userId: req.user!.id,
+      action: "CREATE",
+      entityType: "Receipt",
+      entityId: receipt.id,
+      changes: { fileName: file.originalname, fileSize: file.size },
+      req,
     });
   }
 );
@@ -263,19 +274,30 @@ receiptRouter.post(
           where: { receiptId: req.params.id },
           data: updateData,
         });
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } else if (corrections.total_amount != null) {
         await prisma.receiptData.create({
           data: {
             receiptId: req.params.id,
             ...updateData,
-            totalAmount: corrections.total_amount ?? 0,
-          } as any,
+            totalAmount: corrections.total_amount,
+          },
         });
+      } else {
+        throw new AppError(400, "VALIDATION_ERROR", "total_amount is required when creating receipt data");
       }
     }
 
     res.json({ success: true });
+
+    createAuditLog({
+      tenantId: req.user!.tenantId,
+      userId: req.user!.id,
+      action: "UPDATE",
+      entityType: "Receipt",
+      entityId: req.params.id,
+      changes: { action, corrections, notes },
+      req,
+    });
   }
 );
 
@@ -299,4 +321,13 @@ receiptRouter.delete("/:id", adminOnly, async (req: AuthRequest, res) => {
   });
 
   res.json({ success: true });
+
+  createAuditLog({
+    tenantId: req.user!.tenantId,
+    userId: req.user!.id,
+    action: "DELETE",
+    entityType: "Receipt",
+    entityId: req.params.id,
+    req,
+  });
 });
