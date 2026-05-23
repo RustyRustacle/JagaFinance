@@ -1,108 +1,103 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+import 'config/theme.dart';
+import 'providers/auth_provider.dart';
+import 'providers/dashboard_provider.dart';
+import 'services/api_client.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
 void main() {
-  runApp(const VaultLedgerApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const JagaFinanceApp());
 }
 
-class VaultLedgerApp extends StatelessWidget {
-  const VaultLedgerApp({super.key});
+class JagaFinanceApp extends StatefulWidget {
+  const JagaFinanceApp({super.key});
+
+  @override
+  State<JagaFinanceApp> createState() => _JagaFinanceAppState();
+}
+
+class _JagaFinanceAppState extends State<JagaFinanceApp> {
+  late final ApiClient _apiClient;
+
+  @override
+  void initState() {
+    super.initState();
+    _apiClient = ApiClient();
+  }
+
+  @override
+  void dispose() {
+    _apiClient.clearTokens();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'VaultLedger',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFF3B82F6),
-          primaryContainer: Color(0xFFDBEAFE),
-          secondary: Color(0xFF6366F1),
-          surface: Colors.white,
-          onPrimary: Colors.white,
-          onSurface: Color(0xFF0F172A),
-          outline: Color(0xFFE2E8F0),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthProvider>(
+          create: (_) => AuthProvider(_apiClient),
         ),
-        fontFamily: 'Inter',
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          centerTitle: false,
-          backgroundColor: Colors.transparent,
-          foregroundColor: Color(0xFF0F172A),
-          titleTextStyle: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF0F172A),
-          ),
+        ChangeNotifierProvider<DashboardProvider>(
+          create: (_) => DashboardProvider(_apiClient),
         ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF3B82F6),
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            textStyle: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF0F172A),
-            side: const BorderSide(color: Color(0xFFE2E8F0)),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            textStyle: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: const Color(0xFFF8FAFC),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
-          ),
-          labelStyle: const TextStyle(
-            fontFamily: 'Inter',
-            color: Color(0xFF64748B),
-            fontSize: 14,
-          ),
-        ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFFE2E8F0)),
-          ),
-          color: Colors.white,
-        ),
+      ],
+      child: MaterialApp(
+        title: 'JagaFinance',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('id', ''),
+          Locale('en', ''),
+        ],
+        locale: const Locale('id'),
+        home: const AppShell(),
       ),
-      home: const LoginScreen(),
+    );
+  }
+}
+
+class AppShell extends StatefulWidget {
+  const AppShell({super.key});
+
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthProvider>().tryAutoLogin();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        switch (auth.status) {
+          case AuthStatus.uninitialized:
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          case AuthStatus.authenticated:
+            return const HomeScreen();
+          case AuthStatus.unauthenticated:
+          case AuthStatus.loading:
+            return const LoginScreen();
+        }
+      },
     );
   }
 }
