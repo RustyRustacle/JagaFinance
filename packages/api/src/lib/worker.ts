@@ -251,7 +251,14 @@ async function processExport(exportId: string) {
     });
 
   if (error) {
-    throw new Error(`Failed to upload export file: ${error.message}`);
+    await prisma.exportJob.update({
+      where: { id: exportId },
+      data: {
+        status: "FAILED",
+        errorMessage: `Storage upload failed: ${error.message}`,
+      },
+    });
+    return;
   }
 
   await prisma.exportJob.update({

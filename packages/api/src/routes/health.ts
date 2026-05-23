@@ -1,7 +1,20 @@
 import { Router } from "express";
 import { prisma } from "@jagafinance/db";
+import Redis from "ioredis";
 
 export const healthRouter = Router();
+
+let redisConnection: Redis | null = null;
+
+function getRedisConnection(): Redis {
+  if (!redisConnection) {
+    redisConnection = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
+      lazyConnect: true,
+      maxRetriesPerRequest: null,
+    });
+  }
+  return redisConnection;
+}
 
 healthRouter.get("/", async (_req, res) => {
   const health = {
@@ -23,11 +36,9 @@ healthRouter.get("/", async (_req, res) => {
   }
 
   try {
-    const Redis = require("ioredis");
-    const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+    const redis = getRedisConnection();
     await redis.ping();
     health.services.redis = "connected";
-    await redis.quit();
   } catch {
     health.services.redis = "disconnected";
     health.status = "degraded";

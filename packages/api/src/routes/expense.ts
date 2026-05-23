@@ -5,6 +5,7 @@ import { authMiddleware, AuthRequest, financeOrAdmin, adminOnly } from "../middl
 import { AppError } from "../middleware/errorHandler";
 import { ExpenseStatus } from "@jagafinance/db";
 import { enqueueBudgetAlert } from "../lib/queue";
+import { createAuditLog } from "../lib/audit";
 
 export const expenseRouter = Router();
 
@@ -50,6 +51,7 @@ expenseRouter.use(authMiddleware);
 expenseRouter.post(
   "/",
   financeOrAdmin,
+  validate(createExpenseSchema),
   async (req: AuthRequest, res) => {
     const data = req.body;
     const expenseDate = new Date(data.expense_date);
@@ -86,6 +88,16 @@ expenseRouter.post(
     });
 
     res.status(201).json({ success: true, data: expense });
+
+    createAuditLog({
+      tenantId: req.user!.tenantId,
+      userId: req.user!.id,
+      action: "CREATE",
+      entityType: "Expense",
+      entityId: expense.id,
+      changes: { title: data.title, amount: data.amount, categoryId: data.category_id },
+      req,
+    });
 
     const budgets = await prisma.budget.findMany({
       where: {
@@ -198,6 +210,7 @@ expenseRouter.get("/:id", async (req: AuthRequest, res) => {
 expenseRouter.patch(
   "/:id",
   financeOrAdmin,
+  validate(updateExpenseSchema),
   async (req: AuthRequest, res) => {
     const data = req.body as Record<string, unknown>;
 
@@ -216,6 +229,16 @@ expenseRouter.patch(
     });
 
     res.json({ success: true, data: expense });
+
+    createAuditLog({
+      tenantId: req.user!.tenantId,
+      userId: req.user!.id,
+      action: "UPDATE",
+      entityType: "Expense",
+      entityId: req.params.id,
+      changes: data,
+      req,
+    });
   }
 );
 
@@ -227,12 +250,23 @@ expenseRouter.delete("/:id", adminOnly, async (req: AuthRequest, res) => {
     },
   });
 
-  res.json({ success: true });
-});
+    res.json({ success: true });
+
+    createAuditLog({
+      tenantId: req.user!.tenantId,
+      userId: req.user!.id,
+      action: "DELETE",
+      entityType: "Expense",
+      entityId: req.params.id,
+      req,
+    });
+  }
+);
 
 expenseRouter.patch(
   "/bulk",
   financeOrAdmin,
+  validate(bulkUpdateSchema),
   async (req: AuthRequest, res) => {
     const { ids, updates } = req.body as { ids: string[]; updates: Record<string, unknown> };
 
