@@ -1,6 +1,6 @@
 import { Worker, Queue, Job } from "bullmq";
 import Redis from "ioredis";
-import { prisma } from "@vaultledger/db";
+import { prisma } from "@jagafinance/db";
 import { supabase } from "../lib/supabase";
 import { OCRService } from "../services/ocr";
 import { EmailService } from "../services/email";

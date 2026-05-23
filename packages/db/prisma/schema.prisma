@@ -34,6 +34,7 @@ enum ReceiptStatus {
   UPLOADED
   PROCESSING
   COMPLETED
+  FINALIZED
   FAILED
   REJECTED
 }
@@ -192,6 +193,12 @@ model Receipt {
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
+  blockchainTxHash   String?   @map("blockchain_tx_hash") @db.VarChar(100)
+  blockchainStatus   String?   @default("PENDING") @map("blockchain_status") @db.VarChar(20)
+  blockchainNetwork  String?   @default("base_sepolia") @map("blockchain_network") @db.VarChar(50)
+  blockchainSubmittedAt DateTime? @map("blockchain_submitted_at")
+  blockchainConfirmedAt DateTime? @map("blockchain_confirmed_at")
+
   tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploader        User          @relation(fields: [uploadedBy], references: [id])
   receiptData     ReceiptData?
@@ -200,6 +207,7 @@ model Receipt {
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([tenantId, createdAt(sort: Desc)])
+  @@index([blockchainTxHash])
   @@map("receipts")
 }
 

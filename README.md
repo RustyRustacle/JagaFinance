@@ -1,15 +1,15 @@
-# VaultLedger
+# JagaFinance
 
 > **B2B Receipt & Expense Intelligence Platform** — Digitize physical receipts into auditable financial reports in seconds.
 
-VaultLedger is a production-grade monorepo that combines AI-powered OCR, real-time expense tracking, multi-tenant budget management, and export-ready financial reporting — purpose-built for Indonesian B2B workflows with full PPN/PPh tax compliance.
+JagaFinance is a production-grade monorepo that combines AI-powered OCR, real-time expense tracking, multi-tenant budget management, and export-ready financial reporting — purpose-built for Indonesian B2B workflows with full PPN/PPh tax compliance.
 
 ---
 
 ## Architecture
 
 ```
-vaultledger/
+jagafinance/
 ├── apps/
 │   ├── web/                    # Next.js 14 (App Router, i18n, PWA)
 │   └── mobile/                 # Flutter (scaffold)
@@ -26,7 +26,7 @@ vaultledger/
 ### Design Principles
 
 - **Monorepo isolation** — pnpm workspaces + Turborepo for coordinated builds, type-checking, and linting across packages.
-- **Type-safe end-to-end** — Shared Prisma types via `@vaultledger/db`, Zod validation on all API inputs, strict TypeScript 5.5.
+- **Type-safe end-to-end** — Shared Prisma types via `@jagafinance/db`, Zod validation on all API inputs, strict TypeScript 5.5.
 - **Multi-tenant by design** — Every query scoped to `tenantId`; RBAC with Admin, Finance, and Viewer roles.
 - **Async by default** — OCR processing, budget alerts, and exports are queued via BullMQ + Redis for non-blocking operations.
 - **Defense in depth** — Helmet, rate-limiting, JWT verification, API key auth, and Supabase RLS across all layers.
@@ -67,8 +67,8 @@ docker info      # Docker Desktop running
 
 ```bash
 # 1. Clone & install
-git clone https://github.com/RustyRustacle/VaultLedger.git
-cd VaultLedger
+git clone https://github.com/RustyRustacle/JagaFinance.git
+cd JagaFinance
 pnpm install
 
 # 2. Start Postgres + Redis
@@ -85,7 +85,7 @@ pnpm db:generate       # Generate Prisma client
 pnpm db:push           # Push schema to PostgreSQL
 
 # 5. (Optional) Seed sample data
-pnpm --filter=@vaultledger/db seed
+pnpm --filter=@jagafinance/db seed
 
 # 6. Start development
 pnpm dev

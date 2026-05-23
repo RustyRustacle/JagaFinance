@@ -4,7 +4,7 @@
 
 1. Go to [supabase.com](https://supabase.com)
 2. Sign in → New Project
-3. Project name: `vaultledger`
+3. Project name: `jagafinance`
 4. Database password: (save this securely)
 5. Region: `Southeast Asia (Singapore)` (closest to Indonesia)
 6. Wait for provisioning (~2 minutes)

@@ -24,13 +24,13 @@ export class EmailService {
     const { recipient, tenantName, categoryName, currentAmount, budgetAmount, percentage, period } = data;
 
     await resend.emails.send({
-      from: "VaultLedger <alerts@vaultledger.com>",
+      from: "JagaFinance <alerts@jagafinance.com>",
       to: [recipient],
       subject: `[${tenantName}] Budget Alert: ${categoryName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: #2563EB; padding: 20px; border-radius: 8px 8px 0 0;">
-            <h1 style="color: white; margin: 0;">VaultLedger</h1>
+            <h1 style="color: white; margin: 0;">JagaFinance</h1>
           </div>
           <div style="padding: 24px; border: 1px solid #E5E7EB; border-top: 0;">
             <h2 style="color: #DC2626;">Budget Alert</h2>
@@ -61,7 +61,7 @@ export class EmailService {
             }
 
             <p style="color: #6B7280; font-size: 12px; margin-top: 24px;">
-              This is an automated notification from VaultLedger. To change your notification settings, visit your dashboard.
+              This is an automated notification from JagaFinance. To change your notification settings, visit your dashboard.
             </p>
           </div>
         </div>
@@ -81,17 +81,17 @@ export class EmailService {
     }
 
     await resend.emails.send({
-      from: "VaultLedger <invites@vaultledger.com>",
+      from: "JagaFinance <invites@jagafinance.com>",
       to: [recipient],
-      subject: `You're invited to join ${tenantName} on VaultLedger`,
+      subject: `You're invited to join ${tenantName} on JagaFinance`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: #2563EB; padding: 20px; border-radius: 8px 8px 0 0;">
-            <h1 style="color: white; margin: 0;">VaultLedger</h1>
+            <h1 style="color: white; margin: 0;">JagaFinance</h1>
           </div>
           <div style="padding: 24px; border: 1px solid #E5E7EB; border-top: 0;">
             <h2>Join ${tenantName}</h2>
-            <p>You have been invited to join <strong>${tenantName}</strong> on VaultLedger as <strong>${role}</strong>.</p>
+            <p>You have been invited to join <strong>${tenantName}</strong> on JagaFinance as <strong>${role}</strong>.</p>
             <p style="margin: 24px 0;">
               <a href="${inviteUrl}" style="background: #2563EB; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
                 Accept Invitation
@@ -115,7 +115,7 @@ export class EmailService {
     }
 
     await resend.emails.send({
-      from: "VaultLedger <reports@vaultledger.com>",
+      from: "JagaFinance <reports@jagafinance.com>",
       to: [recipient],
       subject: `Your ${exportType} report is ready`,
       html: `

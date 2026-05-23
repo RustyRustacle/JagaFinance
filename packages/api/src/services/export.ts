@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import PDFDocument from "pdfkit";
-import { prisma } from "@vaultledger/db";
+import { prisma } from "@jagafinance/db";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -18,7 +18,7 @@ export class ExportService {
     filters: ExportFilters
   ): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = "VaultLedger";
+    workbook.creator = "JagaFinance";
     workbook.created = new Date();
 
     const worksheet = workbook.addWorksheet("Expenses", {
@@ -130,8 +130,8 @@ export class ExportService {
         size: "A4",
         margin: 50,
         info: {
-          Title: "Expense Report - VaultLedger",
-          Author: "VaultLedger",
+          Title: "Expense Report - JagaFinance",
+          Author: "JagaFinance",
           CreationDate: new Date(),
         },
       });

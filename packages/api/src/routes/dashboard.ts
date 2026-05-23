@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { prisma } from "@vaultledger/db";
+import { prisma } from "@jagafinance/db";
 import { authMiddleware, AuthRequest } from "../middleware/auth";
 
 export const dashboardRouter = Router();

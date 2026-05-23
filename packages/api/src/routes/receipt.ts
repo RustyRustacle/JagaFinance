@@ -2,13 +2,14 @@ import { Router } from "express";
 import multer from "multer";
 import { z } from "zod";
 import path from "path";
-import { prisma, ReceiptStatus } from "@vaultledger/db";
-import type { Prisma } from "@vaultledger/db";
+import { prisma, ReceiptStatus } from "@jagafinance/db";
+import type { Prisma } from "@jagafinance/db";
 import { supabase } from "../lib/supabase";
 import { authMiddleware, AuthRequest, financeOrAdmin, adminOnly } from "../middleware/auth";
 import { AppError } from "../middleware/errorHandler";
 import { validate } from "../middleware/validate";
 import { enqueueOCR } from "../lib/queue";
+import { submitReceiptToBlockchain } from "../services/blockchain";
 
 export const receiptRouter = Router();
 
@@ -201,6 +202,42 @@ receiptRouter.post(
         where: { id: req.params.id },
         data: { status: "COMPLETED" },
       });
+
+      const receiptData = await prisma.receipt.findUnique({
+        where: { id: req.params.id },
+        include: { receiptData: true },
+      });
+
+      if (receiptData?.receiptData) {
+        const bcResult = await submitReceiptToBlockchain(
+          receiptData.id,
+          receiptData.tenantId,
+          receiptData.receiptData.totalAmount.toString(),
+          receiptData.createdAt.toISOString()
+        );
+
+        if (bcResult.status === "CONFIRMED") {
+          await prisma.receipt.update({
+            where: { id: req.params.id },
+            data: {
+              status: "FINALIZED",
+              blockchainTxHash: bcResult.txHash,
+              blockchainStatus: "CONFIRMED",
+              blockchainNetwork: process.env.BLOCKCHAIN_CHAIN_ID === "84532" ? "base_sepolia" : "base",
+              blockchainSubmittedAt: new Date(),
+              blockchainConfirmedAt: new Date(),
+            },
+          });
+        } else {
+          await prisma.receipt.update({
+            where: { id: req.params.id },
+            data: {
+              blockchainStatus: "FAILED",
+              blockchainSubmittedAt: new Date(),
+            },
+          });
+        }
+      }
     } else if (action === "reject") {
       await prisma.receipt.update({
         where: { id: req.params.id },

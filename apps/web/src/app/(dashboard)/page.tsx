@@ -50,10 +50,10 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const change =
-    overview?.monthly_trend && overview.monthly_trend.length >= 2
-      ? ((overview.monthly_trend[2]?.amount ?? 0) - (overview.monthly_trend[1]?.amount ?? 0))
-      : 0;
+  const trend = overview?.monthly_trend ?? [];
+  const change = trend.length >= 3
+    ? ((trend[2]?.amount ?? 0) - (trend[1]?.amount ?? 0))
+    : 0;
 
   const stats = [
     {
@@ -194,10 +194,10 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="space-y-3">
-            {(overview?.monthly_trend?.length ?? 0) > 0 ? (
-              [...overview!.monthly_trend].reverse().map((m, i) => {
+            {trend.length > 0 ? (
+              [...trend].reverse().map((m, i) => {
                 const monthKey = m.month.split("-")[1];
-                const maxAmount = Math.max(...overview!.monthly_trend.map((t) => t.amount), 1);
+                const maxAmount = Math.max(...trend.map((t) => t.amount), 1);
                 const barHeight = (m.amount / maxAmount) * 100;
                 return (
                   <div key={m.month} className="animate-slide-up flex items-center gap-4" style={{ animationDelay: `${i * 80}ms` }}>

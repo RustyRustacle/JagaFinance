@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { prisma } from "@vaultledger/db";
+import { prisma } from "@jagafinance/db";
 
 export const healthRouter = Router();
 

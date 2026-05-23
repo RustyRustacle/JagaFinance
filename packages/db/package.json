@@ -1,5 +1,5 @@
 {
-  "name": "@vaultledger/db",
+  "name": "@jagafinance/db",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",

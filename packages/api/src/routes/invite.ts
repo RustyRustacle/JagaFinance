@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import crypto from "crypto";
-import { prisma, InviteStatus } from "@vaultledger/db";
+import { prisma, InviteStatus } from "@jagafinance/db";
 import { supabase } from "../lib/supabase";
 import { authMiddleware, AuthRequest, financeOrAdmin } from "../middleware/auth";
 import { validate } from "../middleware/validate";

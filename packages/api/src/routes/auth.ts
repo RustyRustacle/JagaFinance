@@ -1,7 +1,6 @@
 import { Router } from "express";
-import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { prisma } from "@vaultledger/db";
+import { prisma } from "@jagafinance/db";
 import { supabase } from "../lib/supabase";
 import { validate } from "../middleware/validate";
 import { authMiddleware, AuthRequest } from "../middleware/auth";
@@ -22,14 +21,6 @@ const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
-
-function generateToken(payload: Record<string, string>) {
-  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "1h" });
-}
-
-function generateRefreshToken(payload: Record<string, string>) {
-  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "7d" });
-}
 
 authRouter.post("/register", validate(registerSchema), async (req, res) => {
   const { email, password, name, tenantName, tenantSlug, language } = req.body;
@@ -69,19 +60,14 @@ authRouter.post("/register", validate(registerSchema), async (req, res) => {
     },
   });
 
-  const accessToken = generateToken({
-    userId: authUser.user.id,
-    tenantId: tenant.id,
-    role: "ADMIN",
+  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
     email,
+    password,
   });
 
-  const refreshToken = generateRefreshToken({
-    userId: authUser.user.id,
-    tenantId: tenant.id,
-    role: "ADMIN",
-    email,
-  });
+  if (signInError || !signInData.session) {
+    throw new AppError(400, "AUTH_ERROR", signInError?.message || "Failed to create session");
+  }
 
   res.status(201).json({
     success: true,
@@ -96,8 +82,8 @@ authRouter.post("/register", validate(registerSchema), async (req, res) => {
         name: tenantName,
         slug: tenantSlug,
       },
-      accessToken,
-      refreshToken,
+      accessToken: signInData.session.access_token,
+      refreshToken: signInData.session.refresh_token,
     },
   });
 });
@@ -128,22 +114,6 @@ authRouter.post("/login", validate(loginSchema), async (req, res) => {
     throw new AppError(403, "FORBIDDEN", "No active tenant membership");
   }
 
-  const defaultMembership = memberships[0];
-
-  const accessToken = generateToken({
-    userId: authData.user.id,
-    tenantId: defaultMembership.tenantId,
-    role: defaultMembership.role,
-    email: authData.user.email ?? "",
-  });
-
-  const refreshToken = generateRefreshToken({
-    userId: authData.user.id,
-    tenantId: defaultMembership.tenantId,
-    role: defaultMembership.role,
-    email: authData.user.email ?? "",
-  });
-
   res.json({
     success: true,
     data: {
@@ -158,8 +128,8 @@ authRouter.post("/login", validate(loginSchema), async (req, res) => {
         slug: m.tenant.slug,
         role: m.role,
       })),
-      accessToken,
-      refreshToken,
+      accessToken: authData.session!.access_token,
+      refreshToken: authData.session!.refresh_token,
     },
   });
 });
@@ -170,20 +140,16 @@ authRouter.post("/refresh", async (req, res) => {
     throw new AppError(400, "VALIDATION_ERROR", "Refresh token required");
   }
 
-  const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET!) as Record<string, string>;
-
-  const newAccessToken = generateToken({
-    userId: decoded.userId,
-    tenantId: decoded.tenantId,
-    role: decoded.role,
-    email: decoded.email ?? "",
-  });
+  const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+  if (error || !data.session) {
+    throw new AppError(401, "AUTH_REQUIRED", "Invalid or expired refresh token");
+  }
 
   res.json({
     success: true,
     data: {
-      accessToken: newAccessToken,
-      refreshToken,
+      accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
     },
   });
 });
@@ -191,7 +157,10 @@ authRouter.post("/refresh", async (req, res) => {
 authRouter.post("/logout", authMiddleware, async (req: AuthRequest, res) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (token) {
-    await supabase.auth.admin.signOut(token);
+    const { error } = await supabase.auth.admin.signOut(token);
+    if (error) {
+      throw new AppError(500, "LOGOUT_ERROR", error.message);
+    }
   }
   res.json({ success: true });
 });
