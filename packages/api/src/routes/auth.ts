@@ -9,17 +9,17 @@ import { AppError } from "../middleware/errorHandler";
 export const authRouter = Router();
 
 const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  name: z.string().min(2).max(100),
-  tenantName: z.string().min(2).max(100),
-  tenantSlug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/),
-  language: z.string().default("id"),
+email: z.string().email(),
+password: z.string().min(8),
+name: z.string().min(2).max(100),
+tenantName: z.string().min(2).max(100),
+tenantSlug: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/),
+language: z.string().default("id"),
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+email: z.string().email(),
+password: z.string().min(1),
 });
 
 authRouter.post("/register", validate(registerSchema), async (req, res) => {
@@ -164,3 +164,5 @@ authRouter.post("/logout", authMiddleware, async (req: AuthRequest, res) => {
   }
   res.json({ success: true });
 });
+
+
