@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { prisma } from "@vaultledger/db";
+import { prisma } from "@jagafinance/db";
 import { authMiddleware, AuthRequest } from "../middleware/auth";
 import { AppError } from "../middleware/errorHandler";
 import { validate } from "../middleware/validate";

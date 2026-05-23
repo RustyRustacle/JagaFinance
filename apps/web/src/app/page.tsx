@@ -38,7 +38,7 @@ function Navbar() {
               </svg>
             </div>
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-              VaultLedger
+              JagaFinance
             </span>
           </Link>
 
@@ -91,7 +91,7 @@ function Hero() {
           </h1>
 
           <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-            VaultLedger mengubah resi fisik menjadi data keuangan digital secara otomatis.
+            JagaFinance mengubah resi fisik menjadi data keuangan digital secara otomatis.
             Lacak pengeluaran, kelola budget, dan buat laporan dalam hitungan detik.
           </p>
 
@@ -301,7 +301,7 @@ function CTASection() {
           </span>
         </h2>
         <p className="text-lg text-gray-300 mb-10 max-w-2xl mx-auto">
-          Bergabung dengan 500+ perusahaan yang sudah menggunakan VaultLedger.
+          Bergabung dengan 500+ perusahaan yang sudah menggunakan JagaFinance.
           Gratis selamanya, tanpa kartu kredit.
         </p>
         <div className="flex items-center justify-center gap-4">
@@ -336,7 +336,7 @@ function Footer() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <span className="text-lg font-bold text-gray-900">VaultLedger</span>
+              <span className="text-lg font-bold text-gray-900">JagaFinance</span>
             </Link>
             <p className="text-sm text-gray-600 max-w-sm">
               Platform B2B untuk digitalisasi resi dan manajemen pengeluaran bisnis.
@@ -365,7 +365,7 @@ function Footer() {
           </div>
         </div>
         <div className="border-t border-gray-200 mt-10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-500">&copy; 2026 VaultLedger. All rights reserved.</p>
+          <p className="text-sm text-gray-500">&copy; 2026 JagaFinance. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <a href="#" className="text-sm text-gray-500 hover:text-gray-700">Kebijakan Privasi</a>
             <a href="#" className="text-sm text-gray-500 hover:text-gray-700">Syarat & Ketentuan</a>

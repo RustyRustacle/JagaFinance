@@ -1,5 +1,5 @@
 {
-  "name": "vaultledger",
+  "name": "jagafinance",
   "private": true,
   "version": "0.1.0",
   "description": "B2B Receipt & Expense Intelligence Platform",
@@ -9,13 +9,15 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "db:generate": "turbo --filter=@vaultledger/db generate",
-    "db:migrate": "turbo --filter=@vaultledger/db migrate:dev",
-    "db:push": "turbo --filter=@vaultledger/db push",
-    "db:studio": "turbo --filter=@vaultledger/db studio",
+    "db:generate": "turbo --filter=@jagafinance/db generate",
+    "db:migrate": "turbo --filter=@jagafinance/db migrate:dev",
+    "db:push": "turbo --filter=@jagafinance/db push",
+    "db:studio": "turbo --filter=@jagafinance/db studio",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:reset": "docker-compose down -v && docker-compose up -d"
+    "docker:reset": "docker-compose down -v && docker-compose up -d",
+    "blockchain:compile": "pnpm --filter=@jagafinance/blockchain compile",
+    "blockchain:deploy": "pnpm --filter=@jagafinance/blockchain deploy:base-sepolia"
   },
   "devDependencies": {
     "turbo": "^2.0.0"

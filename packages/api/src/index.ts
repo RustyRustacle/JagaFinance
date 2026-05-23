@@ -59,7 +59,7 @@ app.use("/api/v1/exports", exportRouter);
 app.use(errorHandler);
 
 app.listen(PORT, async () => {
-  console.log(`VaultLedger API running on http://localhost:${PORT}`);
+  console.log(`JagaFinance API running on http://localhost:${PORT}`);
 
   if (process.env.REDIS_URL) {
     try {

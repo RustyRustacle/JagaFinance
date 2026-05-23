@@ -26,14 +26,14 @@ export function Sidebar({ items, pathname }: SidebarProps) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <span className="text-lg font-bold">VaultLedger</span>
+          <span className="text-lg font-bold">JagaFinance</span>
         </div>
       </div>
       <nav className="p-4 space-y-1">
         {items.map((item) => {
           const isActive =
-            item.href === "/dashboard"
-              ? pathname === "/dashboard"
+            item.href === "/"
+              ? pathname === "/"
               : pathname.startsWith(item.href);
 
           return (

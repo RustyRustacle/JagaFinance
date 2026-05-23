@@ -7,11 +7,11 @@ import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: "layout-dashboard" },
-  { label: "Receipts", href: "/dashboard/receipts", icon: "receipt" },
-  { label: "Expenses", href: "/dashboard/expenses", icon: "wallet" },
-  { label: "Budgets", href: "/dashboard/budgets", icon: "target" },
-  { label: "Settings", href: "/dashboard/settings", icon: "settings" },
+  { label: "Dashboard", href: "/", icon: "layout-dashboard" },
+  { label: "Receipts", href: "/receipts", icon: "receipt" },
+  { label: "Expenses", href: "/expenses", icon: "wallet" },
+  { label: "Budgets", href: "/budgets", icon: "target" },
+  { label: "Settings", href: "/settings", icon: "settings" },
 ];
 
 export default function DashboardLayout({

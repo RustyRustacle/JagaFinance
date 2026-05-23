@@ -1,7 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { AppError } from "./errorHandler";
-import { prisma, Role } from "@vaultledger/db";
+import { prisma, Role } from "@jagafinance/db";
+
+const supabaseAnon = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
+);
 
 const supabaseAnon = createClient(
 process.env.SUPABASE_URL!,
@@ -27,37 +32,37 @@ req: AuthRequest,
 _res: Response,
 next: NextFunction
 ) => {
-const authHeader = req.headers.authorization;
-if (!authHeader?.startsWith("Bearer ")) {
-throw new AppError(401, "AUTH_REQUIRED", "Authentication required");
-}
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new AppError(401, "AUTH_REQUIRED", "Authentication required");
+  }
 
-const token = authHeader.split(" ")[1];
+  const token = authHeader.split(" ")[1];
 
-const { data: { user }, error } = await supabaseAnon.auth.getUser(token);
-if (error || !user) {
-throw new AppError(401, "AUTH_REQUIRED", error?.message || "Invalid or expired token");
-}
+  const { data: { user }, error } = await supabaseAnon.auth.getUser(token);
+  if (error || !user) {
+    throw new AppError(401, "AUTH_REQUIRED", error?.message || "Invalid or expired token");
+  }
 
-const membership = await prisma.tenantMember.findFirst({
-where: {
-userId: user.id,
-status: "ACCEPTED",
-},
-});
+  const membership = await prisma.tenantMember.findFirst({
+    where: {
+      userId: user.id,
+      status: "ACCEPTED",
+    },
+  });
 
-if (!membership) {
-throw new AppError(403, "FORBIDDEN", "No active tenant membership");
-}
+  if (!membership) {
+    throw new AppError(403, "FORBIDDEN", "No active tenant membership");
+  }
 
-req.user = {
-id: user.id,
-email: user.email ?? "",
-tenantId: membership.tenantId,
-role: membership.role,
-};
+  req.user = {
+    id: user.id,
+    email: user.email ?? "",
+    tenantId: membership.tenantId,
+    role: membership.role,
+  };
 
-next();
+  next();
 };
 
 export function requireRole(...roles: Role[]) {

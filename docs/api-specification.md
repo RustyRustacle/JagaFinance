@@ -1,9 +1,9 @@
-# VaultLedger REST API Specification
+# JagaFinance REST API Specification
 
 ## Base URL
 ```
 Development: http://localhost:3001/api/v1
-Production:  https://api.vaultledger.com/api/v1
+Production:  https://api.jagafinance.com/api/v1
 ```
 
 ## Authentication
@@ -613,7 +613,7 @@ POST /webhooks
 **Request:**
 ```json
 {
-  "url": "https://your-app.com/webhook/vaultledger",
+  "url": "https://your-app.com/webhook/jagafinance",
   "events": ["RECEIPT_PROCESSED", "BUDGET_EXCEEDED"],
   "secret": "your-webhook-secret"
 }

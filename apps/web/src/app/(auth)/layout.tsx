@@ -8,7 +8,7 @@ export default function AuthLayout({
       <div className="w-full max-w-md p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            VaultLedger
+            JagaFinance
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Receipt & Expense Intelligence

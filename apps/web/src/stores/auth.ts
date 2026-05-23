@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { supabase } from "@/lib/supabase";
 
 interface AuthState {
   accessToken: string | null;
@@ -52,6 +53,12 @@ export const useAuthStore = create<AuthState>()(
           body: JSON.stringify({ email, password }),
         });
 
+        const { error } = await supabase.auth.setSession({
+          access_token: data.accessToken,
+          refresh_token: data.refreshToken,
+        });
+        if (error) throw error;
+
         localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
         set({
@@ -68,6 +75,12 @@ export const useAuthStore = create<AuthState>()(
           body: JSON.stringify(data),
         });
 
+        const { error } = await supabase.auth.setSession({
+          access_token: result.accessToken,
+          refresh_token: result.refreshToken,
+        });
+        if (error) throw error;
+
         localStorage.setItem("accessToken", result.accessToken);
         localStorage.setItem("refreshToken", result.refreshToken);
         set({
@@ -78,7 +91,24 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      logout: () => {
+      logout: async () => {
+        const accessToken = localStorage.getItem("accessToken");
+        if (accessToken) {
+          try {
+            await fetch(`${API_URL}/auth/logout`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+            });
+          } catch {
+            // Ignore logout API errors
+          }
+        }
+
+        await supabase.auth.signOut();
+
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         set({
@@ -94,7 +124,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: "vaultledger-auth",
+      name: "jagafinance-auth",
       partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,

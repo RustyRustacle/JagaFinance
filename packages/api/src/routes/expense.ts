@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
-import { prisma, Prisma } from "@vaultledger/db";
+import { prisma, Prisma } from "@jagafinance/db";
 import { authMiddleware, AuthRequest, financeOrAdmin, adminOnly } from "../middleware/auth";
 import { AppError } from "../middleware/errorHandler";
-import { ExpenseStatus } from "@vaultledger/db";
+import { ExpenseStatus } from "@jagafinance/db";
 import { enqueueBudgetAlert } from "../lib/queue";
 
 export const expenseRouter = Router();

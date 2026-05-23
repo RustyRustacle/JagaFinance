@@ -25,7 +25,7 @@ export default function RegisterPage() {
 
     try {
       await register(form);
-      router.push("/dashboard");
+      router.push("/");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -143,7 +143,7 @@ export default function RegisterPage() {
                 Workspace URL
               </label>
               <div className="flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <span className="text-sm text-gray-500 dark:text-gray-400">vaultledger.com/</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">jagafinance.com/</span>
                 <input
                   id="tenantSlug"
                   type="text"
