@@ -45,6 +45,7 @@ contract ReceiptVerification {
         });
 
         tenantRecords[_tenantId].push(_receiptHash);
+        receiptCount++;
 
         emit ReceiptVerified(_receiptHash, _tenantId, block.timestamp);
     }
