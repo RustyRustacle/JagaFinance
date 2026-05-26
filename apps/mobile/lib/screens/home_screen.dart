@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../config/theme.dart';
+import '../providers/auth_provider.dart';
 import 'dashboard_screen.dart';
 import 'upload_receipt_screen.dart';
-import 'analytics_screen.dart';
+import 'expenses_screen.dart';
+import 'budgets_screen.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,33 +21,41 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = const [
     DashboardScreen(),
     UploadReceiptScreen(),
-    AnalyticsScreen(),
-    _TeamScreen(),
+    ExpensesScreen(),
+    BudgetsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: _buildBottomNav(context),
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        if (!auth.isAuthenticated) {
+          return const LoginScreen();
+        }
+
+        return Scaffold(
+          body: IndexedStack(
+            index: _currentIndex,
+            children: _screens,
+          ),
+          bottomNavigationBar: _buildBottomNav(context, auth),
+        );
+      },
     );
   }
 
-  Widget _buildBottomNav(BuildContext context) {
+  Widget _buildBottomNav(BuildContext context, AuthProvider auth) {
     final items = [
       ('Dashboard', Icons.grid_view_rounded),
-      ('Receipts', Icons.receipt_long_rounded),
-      ('Reports', Icons.bar_chart_rounded),
-      ('Team', Icons.people_outline_rounded),
+      ('Scan', Icons.camera_alt_rounded),
+      ('Expenses', Icons.receipt_long_rounded),
+      ('Budgets', Icons.account_balance_wallet_rounded),
     ];
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: const Color(0xFFE2E8F0), width: 0.5)),
+        border: Border(top: BorderSide(color: AppTheme.border, width: 0.5)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -72,9 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     items[i].$2,
                     size: 22,
-                    color: isActive
-                        ? const Color(0xFF3B82F6)
-                        : const Color(0xFF94A3B8),
+                    color: isActive ? AppTheme.primary : AppTheme.textMuted,
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -83,9 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontFamily: 'Inter',
                       fontSize: 11,
                       fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                      color: isActive
-                          ? const Color(0xFF3B82F6)
-                          : const Color(0xFF94A3B8),
+                      color: isActive ? AppTheme.primary : AppTheme.textMuted,
                     ),
                   ),
                 ],
@@ -93,20 +102,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         }),
-      ),
-    );
-  }
-}
-
-class _TeamScreen extends StatelessWidget {
-  const _TeamScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Team')),
-      body: const Center(
-        child: Text('Team Management'),
       ),
     );
   }

@@ -1,307 +1,184 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../config/theme.dart';
+import '../models/receipt.dart';
+import '../providers/auth_provider.dart';
+import '../providers/dashboard_provider.dart';
+import '../widgets/common_widgets.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<DashboardProvider>();
+      provider.loadDashboard();
+      provider.loadExpenses();
+    });
+  }
+
+  Future<void> _onRefresh() async {
+    final provider = context.read<DashboardProvider>();
+    await Future.wait([
+      provider.loadDashboard(),
+      provider.loadExpenses(),
+      provider.loadReceipts(),
+    ]);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final provider = context.watch<DashboardProvider>();
+
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-
-              // Top bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Good morning,',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          color: const Color(0xFF64748B),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Budi 👋',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'B',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Main financial card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF3B82F6).withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Total Spending',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            color: Colors.white.withOpacity(0.8),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.trending_up, size: 14, color: Colors.white),
-                              SizedBox(width: 4),
-                              Text(
-                                '+12.5%',
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Rp 14.280.000',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 32,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        _buildCardStat('Budget Remaining', 'Rp 5.72M'),
-                        const SizedBox(width: 16),
-                        _buildCardStat('Days Left', '18'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Stats row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      Icons.document_scanner_outlined,
-                      'OCR Success',
-                      '98.5%',
-                      const Color(0xFF10B981),
-                      const Color(0xFFD1FAE5),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      Icons.description_outlined,
-                      'Reports Ready',
-                      '24',
-                      const Color(0xFF8B5CF6),
-                      const Color(0xFFEDE9FE),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Spending trend
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Spending Trend',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(foregroundColor: const Color(0xFF3B82F6)),
-                    child: const Text(
-                      'This Month',
-                      style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Bar chart
-              Container(
-                width: double.infinity,
-                height: 140,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: CustomPaint(
-                  size: const Size(double.infinity, 108),
-                  painter: _BarChartPainter(),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Recent receipts header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Recent Receipts',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(foregroundColor: const Color(0xFF3B82F6)),
-                    child: const Text(
-                      'See All',
-                      style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Receipt items
-              _buildReceiptItem('Starbucks Coffee', 'F&B', 'Rp 85.000', '2h ago'),
-              const SizedBox(height: 10),
-              _buildReceiptItem('Shopee Marketplace', 'Office Supply', 'Rp 2.450.000', '5h ago'),
-              const SizedBox(height: 10),
-              _buildReceiptItem('Gojek Transport', 'Transport', 'Rp 45.000', '1d ago'),
-              const SizedBox(height: 10),
-              _buildReceiptItem('Telkom Indonesia', 'Operational', 'Rp 1.200.000', '2d ago'),
-              const SizedBox(height: 24),
-            ],
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                _buildTopBar(auth),
+                const SizedBox(height: 20),
+                _buildMainCard(provider),
+                const SizedBox(height: 16),
+                _buildStatsRow(provider),
+                const SizedBox(height: 20),
+                if (provider.loading && provider.dashboard == null)
+                  const LoadingOverlay(message: 'Loading dashboard...')
+                else if (provider.dashboard != null) ...[
+                  _buildBudgetProgress(provider.dashboard!),
+                  const SizedBox(height: 20),
+                  _buildCategoryBreakdown(provider.dashboard!),
+                  const SizedBox(height: 20),
+                  _buildRecentExpenses(provider),
+                ] else if (provider.error != null)
+                  ErrorView(message: provider.error!, onRetry: _onRefresh),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCardStat(String label, String value) {
-    return Expanded(
+  Widget _buildTopBar(AuthProvider auth) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Good morning,',
+              style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: AppTheme.textSecondary),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              auth.user?.name ?? 'User',
+              style: const TextStyle(fontFamily: 'Inter', fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+            ),
+          ],
+        ),
+        GestureDetector(
+          onTap: () => auth.logout(),
+          child: Container(
+            width: 48, height: 48,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.secondary]),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Center(
+              child: Text(
+                (auth.user?.name ?? 'U')[0].toUpperCase(),
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMainCard(DashboardProvider provider) {
+    final dash = provider.dashboard;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.secondary], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text('Total Spending', style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Colors.white70)),
+          const SizedBox(height: 8),
           Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 11,
-              color: Colors.white.withOpacity(0.7),
-            ),
+            AmountText(amount: dash?.totalExpenses ?? 0).data,
+            style: const TextStyle(fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: -0.5),
           ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _cardStat('Receipts', '${dash?.totalReceipts ?? 0}'),
+              const SizedBox(width: 16),
+              _cardStat('Pending', '${dash?.pendingReviews ?? 0}'),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(IconData icon, String label, String value, Color color, Color bgColor) {
+  Widget _cardStat(String label, String value) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Colors.white.withOpacity(0.7))),
+          const SizedBox(height: 2),
+          Text(value, style: const TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsRow(DashboardProvider provider) {
+    final dash = provider.dashboard;
+    if (dash == null) return const SizedBox.shrink();
+
+    return Row(
+      children: [
+        Expanded(child: _statCard(Icons.document_scanner_outlined, 'OCR Success', '${dash.totalReceipts}', AppTheme.success, const Color(0xFFD1FAE5))),
+        const SizedBox(width: 12),
+        Expanded(child: _statCard(Icons.warning_amber_rounded, 'Alerts', '${dash.budgetAlerts}', AppTheme.warning, const Color(0xFFFEF3C7))),
+      ],
+    );
+  }
+
+  Widget _statCard(IconData icon, String label, String value, Color color, Color bgColor) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.border)),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
+            width: 44, height: 44,
+            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: color, size: 22),
           ),
           const SizedBox(width: 12),
@@ -309,24 +186,9 @@ class DashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
+                Text(label, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppTheme.textSecondary)),
                 const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
+                Text(value, style: const TextStyle(fontFamily: 'Inter', fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
               ],
             ),
           ),
@@ -335,122 +197,141 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildReceiptItem(String merchant, String category, String amount, String time) {
+  Widget _buildBudgetProgress(DashboardData dash) {
+    if (dash.expensesByCategory.isEmpty) return const SizedBox.shrink();
+
+    final totalBudget = dash.expensesByCategory.fold<double>(0, (sum, c) => sum + (c.amount > 0 ? c.amount / (c.percentage / 100) : 0));
+    final totalSpent = dash.totalExpenses;
+    final progress = totalBudget > 0 ? totalSpent / totalBudget : 0.0;
+
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.border)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: const Icon(Icons.receipt_outlined, size: 20, color: Color(0xFF64748B)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  merchant,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  category,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                amount,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
-                ),
+              Text('Budget Overview', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+              Text('This Month', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 8,
+              backgroundColor: const Color(0xFFF1F5F9),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                progress > 0.9 ? AppTheme.danger : progress > 0.7 ? AppTheme.warning : AppTheme.primary,
               ),
-              const SizedBox(height: 2),
-              Text(
-                time,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 11,
-                  color: Color(0xFF94A3B8),
-                ),
-              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('${(progress * 100).toStringAsFixed(1)}% used', style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+              Text('${dash.budgetAlerts} alert${dash.budgetAlerts != 1 ? 's' : ''}', style: TextStyle(fontSize: 12, color: dash.budgetAlerts > 0 ? AppTheme.danger : AppTheme.textSecondary)),
             ],
           ),
         ],
       ),
     );
   }
-}
 
-class _BarChartPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final barPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
-        begin: Alignment.bottomCenter,
-        end: Alignment.topCenter,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+  Widget _buildCategoryBreakdown(DashboardData dash) {
+    if (dash.expensesByCategory.isEmpty) return const EmptyState(icon: Icons.pie_chart_outline, title: 'No expense data', subtitle: 'Start uploading receipts to see breakdown');
 
-    final bgPaint = Paint()
-      ..color = const Color(0xFFF1F5F9);
-
-    final values = [0.45, 0.65, 0.55, 0.75, 0.6, 0.85, 0.7, 0.9, 0.78, 0.88, 0.68, 0.82];
-    final barWidth = size.width / values.length - 8;
-
-    for (int i = 0; i < values.length; i++) {
-      final x = i * (barWidth + 8) + 4;
-      final barHeight = size.height * values[i];
-      final top = size.height - barHeight;
-
-      // Background
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(x, 0, barWidth, size.height),
-          const Radius.circular(4),
-        ),
-        bgPaint,
-      );
-
-      // Value
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(x, top, barWidth, barHeight),
-          const Radius.circular(4),
-        ),
-        barPaint,
-      );
-    }
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppTheme.border)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: 'Category Breakdown'),
+          const SizedBox(height: 12),
+          ...dash.expensesByCategory.map((c) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(c.category, style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary)),
+                ),
+                SizedBox(
+                  width: 100,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: c.percentage / 100,
+                      minHeight: 6,
+                      backgroundColor: const Color(0xFFF1F5F9),
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 80,
+                  child: Text('${c.percentage.toStringAsFixed(1)}%', textAlign: TextAlign.right,
+                      style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
   }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  Widget _buildRecentExpenses(DashboardProvider provider) {
+    final recent = provider.expenses.take(5).toList();
+    if (recent.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title: 'Recent Expenses', actionLabel: 'See All'),
+        const SizedBox(height: 8),
+        ...recent.map((e) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.border)),
+            child: Row(
+              children: [
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(color: AppTheme.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppTheme.border)),
+                  child: const Icon(Icons.receipt_outlined, size: 20, color: AppTheme.textSecondary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(e.title, style: const TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                      const SizedBox(height: 2),
+                      Text(e.category?.name ?? '-', style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppTheme.textSecondary)),
+                    ],
+                  ),
+                ),
+                AmountText(amount: e.amount),
+              ],
+            ),
+          ),
+        )),
+      ],
+    );
+  }
+}
+
+extension on AmountText {
+  String get data {
+    if (amount >= 1000000) return 'Rp ${(amount / 1000000).toStringAsFixed(1)}jt';
+    if (amount >= 1000) return 'Rp ${(amount / 1000).toStringAsFixed(0)}rb';
+    return 'Rp ${amount.toInt()}';
+  }
 }
