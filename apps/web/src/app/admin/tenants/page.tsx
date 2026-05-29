@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
-import { Search, Loader2, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { Search, Loader2, AlertTriangle, ExternalLink } from "lucide-react";
 
 interface Tenant {
   id: string;
