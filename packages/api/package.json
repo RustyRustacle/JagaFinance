@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@google-cloud/vision": "^5.3.6",
-    "@supabase/supabase-js": "^2.45.0",
     "@jagafinance/db": "workspace:*",
+    "@supabase/supabase-js": "^2.45.0",
     "bullmq": "^5.10.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -37,6 +37,8 @@
     "@types/morgan": "^1.9.9",
     "@types/multer": "^1.4.11",
     "@types/node": "^20.14.0",
+    "@types/supertest": "^7.2.0",
+    "supertest": "^7.2.2",
     "tsx": "^4.16.2",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"

@@ -15,6 +15,7 @@ import { categoryRouter } from "./routes/category";
 import { budgetRouter } from "./routes/budget";
 import { dashboardRouter } from "./routes/dashboard";
 import { exportRouter } from "./routes/export";
+import { adminRouter } from "./routes/admin";
 import { errorHandler } from "./middleware/errorHandler";
 import { startWorkers } from "./lib/queue";
 
@@ -88,6 +89,7 @@ app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/budgets", budgetRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/exports", exportRouter);
+app.use("/api/v1/admin", adminRouter);
 
 app.use(errorHandler);
 

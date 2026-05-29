@@ -26,12 +26,6 @@ password: z.string().min(1),
 authRouter.post("/register", validate(registerSchema), async (req, res) => {
   const { email, password, name, tenantName, tenantSlug, language } = req.body;
 
-  const existing = await supabase.auth.admin.listUsers();
-  const userExists = existing.data.users.some((u) => u.email === email);
-  if (userExists) {
-    throw new AppError(409, "DUPLICATE", "Email already registered");
-  }
-
   const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
@@ -39,8 +33,15 @@ authRouter.post("/register", validate(registerSchema), async (req, res) => {
     user_metadata: { name },
   });
 
-  if (authError || !authUser.user) {
-    throw new AppError(400, "AUTH_ERROR", authError?.message || "Failed to create user");
+  if (authError) {
+    if (authError.message.toLowerCase().includes("already")) {
+      throw new AppError(409, "DUPLICATE", "Email already registered");
+    }
+    throw new AppError(400, "AUTH_ERROR", authError.message);
+  }
+
+  if (!authUser.user) {
+    throw new AppError(400, "AUTH_ERROR", "Failed to create user");
   }
 
   const tenant = await prisma.tenant.create({
