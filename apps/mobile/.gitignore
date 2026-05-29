@@ -24,6 +24,10 @@ android/build/
 # Assets
 assets/fonts/
 
+# Signing
+android/keystore/
+android/key.properties
+
 # Environment
 .env
 .env.local

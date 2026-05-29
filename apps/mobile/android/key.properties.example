@@ -1,0 +1,4 @@
+storeFile=../keystore/jagafinance.jks
+storePassword=your_keystore_password
+keyAlias=jagafinance
+keyPassword=your_key_password
