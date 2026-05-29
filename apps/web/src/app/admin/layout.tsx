@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
-import { LayoutDashboard, Users, Building2, LogOut, Loader2 } from "lucide-react";
+import { LayoutDashboard, Users, Building2, Receipt, LogOut, Loader2 } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/users", label: "Pengguna", icon: Users },
   { href: "/admin/tenants", label: "Perusahaan", icon: Building2 },
+  { href: "/admin/receipts", label: "Struk", icon: Receipt },
 ];
 
 function getSupabase() {
