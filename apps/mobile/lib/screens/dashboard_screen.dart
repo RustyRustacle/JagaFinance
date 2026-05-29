@@ -6,6 +6,7 @@ import '../models/receipt.dart';
 import '../providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/common_widgets.dart';
+import 'login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, this.onTabChange});
@@ -107,10 +108,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               final navigator = Navigator.of(context);
               await context.read<AuthProvider>().logout();
               if (mounted) {
-                navigator.pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const Scaffold()),
-                  (route) => false,
-                );
+                  navigator.pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
               }
             }
           },
