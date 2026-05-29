@@ -50,7 +50,7 @@ async function request(endpoint: string, options: FetchOptions = {}): Promise<{ 
   const headers: Record<string, string> = {
     ...(options.formData ? {} : { "Content-Type": "application/json" }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...options.headers,
+    ...(options.formData ? {} : options.headers),
   };
 
   const fetchOptions: RequestInit = {

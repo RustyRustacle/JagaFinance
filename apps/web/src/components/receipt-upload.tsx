@@ -86,9 +86,7 @@ export function ReceiptUpload() {
       formData.append("file", fileItem.file);
 
       try {
-        await api.post("/receipts/upload", formData, {
-          "Content-Type": "multipart/form-data",
-        });
+        await api.post("/receipts/upload", formData);
 
         setFiles((prev) =>
           prev.map((f) =>
