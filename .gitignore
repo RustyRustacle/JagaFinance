@@ -15,3 +15,7 @@ coverage/
 credentials/
 AGENTS.md
 .opencode/
+*.log
+packages/blockchain/artifacts/
+packages/blockchain/cache/
+packages/blockchain/typechain-types/
