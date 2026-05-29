@@ -42,13 +42,20 @@ export default function DashboardPage() {
   const [overview, setOverview] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showScanner, setShowScanner] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchOverview = useCallback(() => {
+    setLoading(true);
+    setError(null);
     api.get("/dashboard/overview")
-      .then((res) => setOverview(res.data))
-      .catch(console.error)
+      .then((res) => setOverview(res.data as DashboardData))
+      .catch((err) => setError(err instanceof Error ? err.message : "Gagal memuat dashboard"))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchOverview();
+  }, [fetchOverview]);
 
   const trend = overview?.monthly_trend ?? [];
   const change = trend.length >= 3
@@ -86,6 +93,18 @@ export default function DashboardPage() {
       change: 0,
     },
   ];
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <AlertTriangle className="h-12 w-12 text-red-400" />
+        <p className="text-sm text-red-600">{error}</p>
+        <button onClick={fetchOverview} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+          Coba Lagi
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -285,9 +304,7 @@ function CameraScanner({ onClose }: { onClose: () => void }) {
       const file = new File([blob], `scan-${Date.now()}.jpg`, { type: "image/jpeg" });
       const formData = new FormData();
       formData.append("file", file);
-      await api.post("/receipts/upload", formData, {
-        "Content-Type": "multipart/form-data",
-      });
+      await api.post("/receipts/upload", formData);
       onClose();
     } catch (err) {
       setError("Gagal mengupload. Coba lagi.");
