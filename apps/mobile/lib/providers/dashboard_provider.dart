@@ -49,7 +49,7 @@ class DashboardProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadExpenses({bool refresh = false}) async {
+  Future<void> loadExpenses({bool refresh = false, String? categoryId, String? status}) async {
     if (refresh) {
       _page = 1;
       _hasMore = true;
@@ -60,12 +60,15 @@ class DashboardProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _api.get('/expenses', queryParameters: {
+      final queryParams = <String, dynamic>{
         'page': _page,
         'limit': _limit,
         'sort': 'expense_date',
         'order': 'desc',
-      });
+      };
+      if (categoryId != null) queryParams['category_id'] = categoryId;
+      if (status != null) queryParams['status'] = status;
+      final response = await _api.get('/expenses', queryParameters: queryParams);
       final data = response.data;
       final list = (data['data'] as List<dynamic>)
           .map((e) => Expense.fromJson(e as Map<String, dynamic>))
