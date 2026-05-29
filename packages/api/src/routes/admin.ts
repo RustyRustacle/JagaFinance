@@ -135,6 +135,169 @@ adminRouter.get("/users", async (_req: AuthRequest, res) => {
   });
 });
 
+adminRouter.get("/users/:id", async (req: AuthRequest, res) => {
+  const { id } = req.params;
+
+  const member = await prisma.tenantMember.findFirst({
+    where: { userId: id },
+    include: {
+      tenant: true,
+      inviter: { select: { email: true } },
+    },
+  });
+
+  if (!member) {
+    res.status(404).json({ success: false, error: { message: "User tidak ditemukan" } });
+    return;
+  }
+
+  let email = "unknown@email.com";
+  try {
+    const { data: supabaseUser } = await supabase.auth.admin.getUserById(id);
+    if (supabaseUser?.user) email = supabaseUser.user.email ?? email;
+  } catch {}
+
+  const receiptCount = await prisma.receipt.count({ where: { uploadedBy: id } });
+  const expenseCount = await prisma.expense.count({ where: { createdBy: id } });
+
+  res.json({
+    success: true,
+    data: {
+      id: member.userId,
+      email,
+      role: member.role,
+      status: member.status,
+      tenant: { id: member.tenant.id, name: member.tenant.name, slug: member.tenant.slug },
+      invitedBy: member.inviter?.email ?? null,
+      invitedAt: member.invitedAt,
+      acceptedAt: member.acceptedAt,
+      createdAt: member.createdAt,
+      updatedAt: member.updatedAt,
+      receiptCount,
+      expenseCount,
+    },
+  });
+});
+
+adminRouter.get("/receipts/:id", async (req: AuthRequest, res) => {
+  const { id } = req.params;
+
+  const receipt = await prisma.receipt.findUnique({
+    where: { id },
+    include: {
+      tenant: { select: { id: true, name: true, slug: true } },
+      uploader: { select: { email: true } },
+      receiptData: {
+        include: { verifier: { select: { email: true } } },
+      },
+      expense: {
+        include: { category: { select: { id: true, name: true } } },
+      },
+    },
+  });
+
+  if (!receipt) {
+    res.status(404).json({ success: false, error: { message: "Struk tidak ditemukan" } });
+    return;
+  }
+
+  res.json({
+    success: true,
+    data: {
+      id: receipt.id,
+      tenant: receipt.tenant,
+      uploader: receipt.uploader,
+      fileName: receipt.fileName,
+      fileType: receipt.fileType,
+      fileSize: receipt.fileSize,
+      fileUrl: receipt.fileUrl,
+      status: receipt.status,
+      ocrProvider: receipt.ocrProvider,
+      ocrConfidence: receipt.ocrConfidence,
+      errorMessage: receipt.errorMessage,
+      processedAt: receipt.processedAt,
+      createdAt: receipt.createdAt,
+      updatedAt: receipt.updatedAt,
+      blockchainTxHash: receipt.blockchainTxHash,
+      blockchainStatus: receipt.blockchainStatus,
+      blockchainNetwork: receipt.blockchainNetwork,
+      blockchainSubmittedAt: receipt.blockchainSubmittedAt,
+      blockchainConfirmedAt: receipt.blockchainConfirmedAt,
+      receiptData: receipt.receiptData
+        ? {
+            merchantName: receipt.receiptData.merchantName,
+            merchantAddress: receipt.receiptData.merchantAddress,
+            merchantPhone: receipt.receiptData.merchantPhone,
+            receiptNumber: receipt.receiptData.receiptNumber,
+            transactionDate: receipt.receiptData.transactionDate,
+            subtotal: receipt.receiptData.subtotal,
+            taxAmount: receipt.receiptData.taxAmount,
+            taxRate: receipt.receiptData.taxRate,
+            discountAmount: receipt.receiptData.discountAmount,
+            totalAmount: receipt.receiptData.totalAmount,
+            currency: receipt.receiptData.currency,
+            paymentMethod: receipt.receiptData.paymentMethod,
+            lineItems: receipt.receiptData.lineItems,
+            isVerified: receipt.receiptData.isVerified,
+            verifier: receipt.receiptData.verifier,
+            verificationNotes: receipt.receiptData.verificationNotes,
+            createdAt: receipt.receiptData.createdAt,
+          }
+        : null,
+      expense: receipt.expense
+        ? {
+            id: receipt.expense.id,
+            title: receipt.expense.title,
+            amount: receipt.expense.amount,
+            status: receipt.expense.status,
+            category: receipt.expense.category,
+            expenseDate: receipt.expense.expenseDate,
+          }
+        : null,
+    },
+  });
+});
+
+adminRouter.get("/receipts", async (_req: AuthRequest, res) => {
+  const page = Math.max(1, parseInt(_req.query.page as string) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(_req.query.limit as string) || 20));
+  const search = (_req.query.search as string) || "";
+
+  const where = search
+    ? { fileName: { contains: search, mode: "insensitive" as const } }
+    : {};
+
+  const [receipts, total] = await Promise.all([
+    prisma.receipt.findMany({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        tenant: { select: { name: true } },
+        uploader: { select: { email: true } },
+        receiptData: { select: { totalAmount: true } },
+      },
+    }),
+    prisma.receipt.count({ where }),
+  ]);
+
+  res.json({
+    success: true,
+    data: receipts.map((r) => ({
+      id: r.id,
+      fileName: r.fileName,
+      fileType: r.fileType,
+      status: r.status,
+      totalAmount: r.receiptData?.totalAmount ?? null,
+      uploaderEmail: r.uploader.email,
+      tenantName: r.tenant.name,
+      createdAt: r.createdAt,
+    })),
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  });
+});
+
 adminRouter.get("/tenants", async (_req: AuthRequest, res) => {
   const page = Math.max(1, parseInt(_req.query.page as string) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(_req.query.limit as string) || 20));
