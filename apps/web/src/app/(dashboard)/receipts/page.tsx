@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { formatIDR, formatDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReceiptUpload } from "@/components/receipt-upload";
-import { RefreshCw, FileText, Filter, Download } from "lucide-react";
+import { RefreshCw, FileText, Filter, Download, AlertTriangle } from "lucide-react";
 
 interface Receipt {
   id: string;
@@ -24,13 +24,16 @@ interface Receipt {
 export default function ReceiptsPage() {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
 
   const fetchReceipts = useCallback(() => {
+    setLoading(true);
+    setError(null);
     const query = filter !== "all" ? `?status=${filter}` : "";
     api.get(`/receipts${query}`)
-      .then((res) => setReceipts(res.data.data ?? []))
-      .catch(console.error)
+      .then((res) => setReceipts((res.data as { data: Receipt[] }).data ?? []))
+      .catch((err) => setError(err instanceof Error ? err.message : "Gagal memuat struk"))
       .finally(() => setLoading(false));
   }, [filter]);
 
@@ -46,6 +49,16 @@ export default function ReceiptsPage() {
     FAILED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
     REJECTED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   };
+
+  if (error) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <AlertTriangle className="h-12 w-12 text-red-400" />
+      <p className="text-sm text-red-600">{error}</p>
+      <button onClick={fetchReceipts} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+        Coba Lagi
+      </button>
+    </div>
+  );
 
   if (loading) return <div className="animate-pulse space-y-4"><div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded" /><div className="h-40 bg-gray-200 dark:bg-gray-700 rounded-xl" /></div>;
 
