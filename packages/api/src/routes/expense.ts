@@ -278,6 +278,15 @@ expenseRouter.patch(
       data: updates,
     });
 
+    createAuditLog({
+      tenantId: req.user!.tenantId,
+      userId: req.user!.id,
+      action: "UPDATE",
+      entityType: "Expense",
+      changes: { ids, updates },
+      req,
+    });
+
     res.json({ success: true, data: { count: updated.count } });
   }
 );

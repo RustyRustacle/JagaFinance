@@ -1,16 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { AppError } from "./errorHandler";
-import { prisma, Role } from "@jagafinance/db";
+import { prisma, Role, InviteStatus } from "@jagafinance/db";
+
+
 
 const supabaseAnon = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_ANON_KEY!
-);
-
-const supabaseAnon = createClient(
-process.env.SUPABASE_URL!,
-process.env.SUPABASE_ANON_KEY!
 );
 
 export interface AuthRequest extends Request {
@@ -47,7 +44,7 @@ next: NextFunction
   const membership = await prisma.tenantMember.findFirst({
     where: {
       userId: user.id,
-      status: "ACCEPTED",
+      status: InviteStatus.ACCEPTED,
     },
   });
 

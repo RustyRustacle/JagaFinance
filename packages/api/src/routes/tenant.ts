@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { z } from "zod";
-import { prisma } from "@jagafinance/db";
+import { prisma, Role } from "@jagafinance/db";
 import { authMiddleware, AuthRequest, financeOrAdmin } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
+import { createAuditLog } from "../lib/audit";
 
 export const tenantRouter = Router();
 
@@ -14,6 +15,10 @@ const updateTenantSchema = z.object({
   timezone: z.string().max(50).optional(),
   language: z.string().max(5).optional(),
   settings: z.record(z.unknown()).optional(),
+});
+
+const updateMemberRoleSchema = z.object({
+  role: z.enum(["ADMIN", "FINANCE", "VIEWER"]),
 });
 
 tenantRouter.use(authMiddleware);
@@ -54,6 +59,16 @@ tenantRouter.patch(
       data: req.body,
     });
 
+    createAuditLog({
+      tenantId: req.user!.tenantId,
+      userId: req.user!.id,
+      action: "UPDATE",
+      entityType: "Tenant",
+      entityId: tenant.id,
+      changes: req.body,
+      req,
+    });
+
     res.json({ success: true, data: tenant });
   }
 );
@@ -87,19 +102,16 @@ tenantRouter.get("/current/members", async (req: AuthRequest, res) => {
 tenantRouter.patch(
   "/current/members/:memberId",
   financeOrAdmin,
+  validate(updateMemberRoleSchema),
   async (req: AuthRequest, res) => {
-    const { role } = req.body as { role?: string };
-
-    if (!role || !["ADMIN", "FINANCE", "VIEWER"].includes(role)) {
-      throw new AppError(400, "VALIDATION_ERROR", "Invalid role");
-    }
+    const { role } = req.body as { role: Role };
 
     const member = await prisma.tenantMember.update({
       where: {
         id: req.params.memberId,
         tenantId: req.user!.tenantId,
       },
-      data: { role: role as "ADMIN" | "FINANCE" | "VIEWER" },
+      data: { role },
       include: {
         user: {
           select: {
@@ -111,6 +123,16 @@ tenantRouter.patch(
       },
     });
 
+    createAuditLog({
+      tenantId: req.user!.tenantId,
+      userId: req.user!.id,
+      action: "UPDATE",
+      entityType: "TenantMember",
+      entityId: member.id,
+      changes: { role },
+      req,
+    });
+
     res.json({ success: true, data: member });
   }
 );
@@ -119,11 +141,20 @@ tenantRouter.delete(
   "/current/members/:memberId",
   financeOrAdmin,
   async (req: AuthRequest, res) => {
-    await prisma.tenantMember.delete({
+    const member = await prisma.tenantMember.delete({
       where: {
         id: req.params.memberId,
         tenantId: req.user!.tenantId,
       },
+    });
+
+    createAuditLog({
+      tenantId: req.user!.tenantId,
+      userId: req.user!.id,
+      action: "DELETE",
+      entityType: "TenantMember",
+      entityId: member.id,
+      req,
     });
 
     res.json({ success: true });

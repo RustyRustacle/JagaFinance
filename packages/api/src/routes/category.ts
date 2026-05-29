@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@jagafinance/db";
 import { authMiddleware, AuthRequest, financeOrAdmin } from "../middleware/auth";
 import { AppError } from "../middleware/errorHandler";
+import { createAuditLog } from "../lib/audit";
 
 export const categoryRouter = Router();
 
@@ -68,6 +69,16 @@ categoryRouter.post("/", financeOrAdmin, validate(createCategorySchema), async (
     },
   });
 
+  createAuditLog({
+    tenantId: req.user!.tenantId,
+    userId: req.user!.id,
+    action: "CREATE",
+    entityType: "ExpenseCategory",
+    entityId: category.id,
+    changes: data,
+    req,
+  });
+
   res.status(201).json({ success: true, data: category });
 });
 
@@ -80,6 +91,16 @@ categoryRouter.patch("/:id", financeOrAdmin, validate(updateCategorySchema), asy
       tenantId: req.user!.tenantId,
     },
     data,
+  });
+
+  createAuditLog({
+    tenantId: req.user!.tenantId,
+    userId: req.user!.id,
+    action: "UPDATE",
+    entityType: "ExpenseCategory",
+    entityId: category.id,
+    changes: data,
+    req,
   });
 
   res.json({ success: true, data: category });
@@ -101,11 +122,20 @@ categoryRouter.delete("/:id", financeOrAdmin, async (req: AuthRequest, res) => {
     );
   }
 
-  await prisma.expenseCategory.delete({
+  const deleted = await prisma.expenseCategory.delete({
     where: {
       id: req.params.id,
       tenantId: req.user!.tenantId,
     },
+  });
+
+  createAuditLog({
+    tenantId: req.user!.tenantId,
+    userId: req.user!.id,
+    action: "DELETE",
+    entityType: "ExpenseCategory",
+    entityId: deleted.id,
+    req,
   });
 
   res.json({ success: true });

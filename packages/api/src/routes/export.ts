@@ -5,6 +5,7 @@ import { authMiddleware, AuthRequest } from "../middleware/auth";
 import { AppError } from "../middleware/errorHandler";
 import { validate } from "../middleware/validate";
 import { enqueueExport } from "../lib/queue";
+import { createAuditLog } from "../lib/audit";
 import { ExportService } from "../services/export";
 
 export const exportRouter = Router();
@@ -41,6 +42,16 @@ exportRouter.post(
     });
 
     await enqueueExport(exportJob.id);
+
+    createAuditLog({
+      tenantId: req.user!.tenantId,
+      userId: req.user!.id,
+      action: "EXPORT",
+      entityType: "ExportJob",
+      entityId: exportJob.id,
+      changes: { format, export_type, filters },
+      req,
+    });
 
     res.status(201).json({ success: true, data: exportJob });
   }

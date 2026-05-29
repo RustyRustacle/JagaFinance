@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase";
 import { authMiddleware, AuthRequest, financeOrAdmin } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 import { AppError } from "../middleware/errorHandler";
+import { createAuditLog } from "../lib/audit";
 
 export const inviteRouter = Router();
 
@@ -73,6 +74,16 @@ inviteRouter.post(
         `${process.env.FRONTEND_URL}/invite/${token}`
       );
     }
+
+    createAuditLog({
+      tenantId: req.user!.tenantId,
+      userId: req.user!.id,
+      action: "INVITE_SEND",
+      entityType: "Invite",
+      entityId: invite.id,
+      changes: { email, role },
+      req,
+    });
 
     res.status(201).json({ success: true, data: invite });
   }
@@ -178,6 +189,16 @@ inviteRouter.post(
     if (signInError || !signInData?.session) {
       throw new AppError(400, "AUTH_ERROR", "Failed to create session after account creation");
     }
+
+    const auditUserId = authUser.user.id;
+    await createAuditLog({
+      tenantId: invite.tenantId,
+      userId: auditUserId,
+      action: "INVITE_ACCEPT",
+      entityType: "Invite",
+      entityId: invite.id,
+      req,
+    });
 
     res.status(201).json({
       success: true,
