@@ -13,7 +13,8 @@ out/
 coverage/
 .vscode/settings.json
 credentials/
-AGENTS.md
+*.md
+!README.md
 .opencode/
 *.log
 packages/blockchain/artifacts/

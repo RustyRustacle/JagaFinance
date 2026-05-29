@@ -11,14 +11,12 @@ JagaFinance is a production-grade monorepo that combines AI-powered OCR, real-ti
 ```
 jagafinance/
 ├── apps/
-│   ├── web/                    # Next.js 14 (App Router, i18n, PWA)
-│   └── mobile/                 # Flutter (scaffold)
+│   ├── web/                    # Next.js 14 (company profile + admin dashboard)
+│   └── mobile/                 # Flutter (login, register, dashboard, upload)
 ├── packages/
-│   ├── api/                    # Express 4 REST API (OCR, queues, export)
+│   ├── api/                    # Express 4 REST API (OCR, queues, export, admin)
 │   └── db/                     # Prisma 5 schema + client (PostgreSQL 16)
-├── supabase/
-│   └── migrations/             # Auth, RLS, storage buckets
-├── credentials/                # GCP service account (gitignored)
+├── packages/blockchain/        # Hardhat + Solidity (Base Sepolia)
 ├── docker-compose.yml          # Local Postgres 16 + Redis 7
 └── turbo.json                  # Turborepo pipeline config
 ```
@@ -38,7 +36,8 @@ jagafinance/
 | Layer | Technology | Purpose |
 |---|---|---|
 | **Runtime** | Node.js 20+, pnpm 9 | Package management, monorepo orchestration |
-| **Web** | Next.js 14 (App Router) | SSR, PWA, i18n, dashboard UI |
+| **Web** | Next.js 14 (App Router) | SSR, PWA, landing page, admin dashboard |
+| **Mobile** | Flutter + Provider + Dio | Native Android app, camera/gallery upload |
 | **API** | Express 4 | RESTful endpoints, file upload, auth |
 | **Language** | TypeScript 5.5 | Strict typing across 100% of codebase |
 | **ORM** | Prisma 5 | Type-safe DB access, migrations |
@@ -47,7 +46,7 @@ jagafinance/
 | **Auth** | Supabase Auth + JWT | SSR session + Bearer token |
 | **OCR** | Tesseract.js + Google Cloud Vision | Local + Cloud OCR pipeline |
 | **Email** | Resend | Transactional notifications |
-| **Reporting** | PDFKit, ExcelJS | Financial report generation |
+| **Blockchain** | Hardhat + Solidity | Receipt hash verification on Base Sepolia |
 | **Styling** | Tailwind CSS + CVA | Utility-first design system |
 | **Containerization** | Docker Compose | Local development infrastructure |
 
@@ -84,10 +83,7 @@ cp packages/api/.env.example packages/api/.env
 pnpm db:generate       # Generate Prisma client
 pnpm db:push           # Push schema to PostgreSQL
 
-# 5. (Optional) Seed sample data
-pnpm --filter=@jagafinance/db seed
-
-# 6. Start development
+# 5. Start development
 pnpm dev
 ```
 
@@ -95,7 +91,8 @@ pnpm dev
 
 | Service | URL | Description |
 |---|---|---|
-| Web App | `http://localhost:3000` | Next.js frontend |
+| Web App | `http://localhost:3000` | Landing page (company profile) |
+| Admin Dashboard | `http://localhost:3000/admin` | Admin panel (login required) |
 | API | `http://localhost:3001` | Express REST API |
 | Prisma Studio | `pnpm db:studio` | Database management UI |
 | PostgreSQL | `localhost:5432` | Primary database |
@@ -109,10 +106,11 @@ pnpm dev
 
 ```
 src/
-├── routes/          # 10 route handlers (health, auth, tenants, invites,
-│                    #   receipts, expenses, categories, budgets, dashboard, exports)
+├── routes/          # Route handlers (health, auth, tenants, invites,
+│                    #   receipts, expenses, categories, budgets, dashboard,
+│                    #   exports, admin)
 ├── middleware/      # auth (JWT + RBAC), validate (Zod), errorHandler
-├── services/       # email, OCR, export
+├── services/       # email, OCR, export, blockchain
 ├── lib/            # queue (BullMQ), worker, supabase client
 └── index.ts        # Express entry point
 ```
@@ -122,18 +120,31 @@ src/
 ```
 src/
 ├── app/
-│   ├── (auth)/     # Login, Register (route group)
-│   └── (dashboard)/ # Dashboard, Receipts, Expenses, Budgets, Settings
-├── components/     # sidebar, header, receipt-upload, ui/card
+│   ├── page.tsx              # Landing page (company profile + download buttons)
+│   └── admin/                # Admin dashboard (login, overview, users, tenants, receipts)
+├── components/     # ui/card, api client
 ├── lib/            # api client, supabase client, utils
-└── stores/         # Zustand auth store
+└── middleware.ts   # Route protection (only /admin/* guarded)
+```
+
+### Mobile (`apps/mobile`)
+
+```
+lib/
+├── config/         # API config, theme
+├── models/         # User, Receipt, Expense, Budget, Dashboard models
+├── services/       # API client (Dio), auth service
+├── providers/      # AuthProvider, DashboardProvider (Provider pattern)
+├── screens/        # Login, Register, Dashboard, Expenses, Budgets, Upload Receipt
+├── widgets/        # LoadingOverlay, ErrorView, EmptyState, StatusBadge
+└── main.dart       # App entry with MultiProvider
 ```
 
 ### Database (`packages/db`)
 
 ```
 prisma/
-└── schema.prisma   # 12 models: Tenant, User, TenantMember, Invite, Receipt,
+└── schema.prisma   # 15 models: Tenant, User, TenantMember, Invite, Receipt,
                     #   ReceiptData, ExpenseCategory, Expense, Budget, BudgetAlert,
                     #   ApiKey, Webhook, WebhookDelivery, AuditLog, ExportJob
 src/
@@ -166,6 +177,12 @@ All endpoints return a standard envelope:
 | `GET/POST /api/v1/budgets` | JWT+RBAC | Budget management |
 | `GET /api/v1/dashboard/overview` | JWT | Aggregated stats |
 | `GET/POST /api/v1/exports` | JWT | PDF/Excel export jobs |
+| `GET /api/v1/admin/stats` | JWT+Admin | Platform-wide statistics |
+| `GET /api/v1/admin/users` | JWT+Admin | All platform users |
+| `GET /api/v1/admin/tenants` | JWT+Admin | All platform tenants |
+| `GET /api/v1/admin/receipts` | JWT+Admin | All platform receipts |
+| `GET /api/v1/admin/users/:id` | JWT+Admin | User detail |
+| `GET /api/v1/admin/receipts/:id` | JWT+Admin | Receipt detail |
 
 ---
 
@@ -178,10 +195,12 @@ All endpoints return a standard envelope:
 | `SUPABASE_ANON_KEY` | ✅ | Supabase anonymous key |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Supabase admin key |
 | `REDIS_URL` | ✅ | Redis connection for BullMQ |
-| `JWT_SECRET` | ✅ | Token signing secret (≥32 chars) |
+| `JWT_SECRET` | ✅ | Token signing secret (>=32 chars) |
 | `GOOGLE_APPLICATION_CREDENTIALS` | ⚠️ | GCP service account path (OCR) |
 | `RESEND_API_KEY` | ⚠️ | Email delivery (invites, alerts) |
 | `NEXT_PUBLIC_API_URL` | ✅ | API base URL for frontend |
+| `BLOCKCHAIN_CONTRACT_ADDRESS` | ⚠️ | Smart contract address (optional) |
+| `BLOCKCHAIN_RPC_URL` | ⚠️ | Base Sepolia RPC endpoint |
 
 ---
 
@@ -195,13 +214,12 @@ All endpoints return a standard envelope:
 | `pnpm typecheck` | `tsc --noEmit` across all packages |
 | `pnpm test` | Run vitest test suites |
 | `pnpm db:generate` | Regenerate Prisma client |
-| `pnpm db:push` | Push Prisma schema → database |
+| `pnpm db:push` | Push Prisma schema to database |
 | `pnpm db:migrate` | Run Prisma migrations |
 | `pnpm db:seed` | Seed development data |
 | `pnpm db:studio` | Open Prisma Studio |
 | `pnpm docker:up` | Start Postgres + Redis |
 | `pnpm docker:down` | Stop containers |
-| `pnpm docker:reset` | Wipe volumes + restart |
 
 ---
 
@@ -212,16 +230,17 @@ All endpoints return a standard envelope:
 - **Real-Time Budget Monitoring** — Configurable budget periods (monthly/quarterly/yearly) with percentage-based alert thresholds and multi-channel notifications.
 - **Tax-Compliant Reporting** — PPN/PPh categorization, tax-deductible flagging, and export-ready financial reports in PDF and Excel formats.
 - **Audit Trail** — All mutations logged with `AuditLog` including actor, action, entity, changes diff, and IP address.
+- **Admin Dashboard** — Platform-wide overview with user/tenant/receipt management, search and pagination.
+- **Blockchain Verification** — Optional receipt hash anchoring on Base Sepolia for tamper-proof audit trail.
 
 ---
 
 ## Related
 
-- [Supabase Setup](./SUPABASE_SETUP.md) — Detailed Supabase project configuration and migration guide
-- [Docker Setup](https://docs.docker.com/desktop/) — Install Docker Desktop for local infrastructure
+- [Admin Guide](./README.md) — Access admin dashboard at `/admin` (requires ADMIN role)
 
 ---
 
 <div align="center">
-  <sub>Built with TypeScript, Next.js, Express, Prisma, and ❤️</sub>
+  <sub>Built with TypeScript, Next.js, Express, Prisma, Flutter, and ❤️</sub>
 </div>
