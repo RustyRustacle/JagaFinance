@@ -4,14 +4,26 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/stores/auth";
+import { AlertTriangle } from "lucide-react";
 
 export default function SettingsPage() {
   const logout = useAuthStore((state) => state.logout);
   const [tenant, setTenant] = useState<Record<string, unknown> | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get("/tenants/current").then((res) => setTenant(res.data.data)).catch(console.error);
+    api.get("/tenants/current")
+      .then((res) => setTenant((res.data as { data: Record<string, unknown> }).data))
+      .catch((err) => setError(err instanceof Error ? err.message : "Gagal memuat pengaturan"))
+      .finally();
   }, []);
+
+  if (error) return (
+    <div className="flex flex-col items-center justify-start min-h-[60vh] gap-4 pt-12">
+      <AlertTriangle className="h-12 w-12 text-red-400" />
+      <p className="text-sm text-red-600">{error}</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
