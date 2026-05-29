@@ -7,7 +7,7 @@ describe("ReceiptVerification", function () {
 
   beforeEach(async function () {
     const factory = await ethers.getContractFactory("ReceiptVerification");
-    contract = await factory.deploy();
+    contract = (await factory.deploy()) as unknown as ReceiptVerification;
     await contract.waitForDeployment();
   });
 
