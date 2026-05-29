@@ -1,126 +1,84 @@
 # JagaFinance — Agent Status
 
 ## Goal
-Full security/performance audit of the JagaFinance monorepo, fix web2 issues, clean up blockchain, rewrite Flutter mobile app for Play Store deployment.
+Full security/performance audit, production-ready web + API, rewritten Flutter mobile app for Play Store.
 
 ## Stack
-- **Web**: Next.js App Router + Supabase + Prisma + Express API (packages/api)
+- **Web**: Next.js 14 App Router (company profile + admin dashboard) + Supabase + Prisma + Express API
 - **Mobile**: Flutter + Provider + Dio + flutter_secure_storage
 - **Blockchain**: Hardhat + Solidity on Base Sepolia
-- **State Management**: Provider (not Riverpod/Bloc)
-- **HTTP**: Dio with auto Bearer token + 401 refresh interceptor with request queue
-- **Storage**: flutter_secure_storage (AES-256 on Android, Keychain on iOS)
 
 ## Progress
 
 ### Done
-- **Audit completed** — 40+ findings documented across security, bugs, medium, and low categories
-- **Zod validation** added to Expense POST/PATCH/bulk, Category POST/PATCH, Budget POST/PATCH
-- **Homemade JWT replaced** in invite accept with Supabase signInWithPassword session
-- **Redis leak fixed** — singleton with lazyConnect: true in health endpoint
-- **Receipt totalAmount=0 bug fixed** — requires total_amount in receiptData
-- **Missing env vars** added to turbo.json globalEnv
-- **Export job stuck in PROCESSING fixed** — sets FAILED on storage error
-- **Dashboard crash fixed** — safer monthly_trend access
-- **Dead bcrypt + @types/bcrypt removed** from api/package.json
-- **Per-route rate limiting** — auth 20/15min, uploads 50/hr, general 200/15min
-- **FINALIZED status** added to receipts UI color map + filter
-- **Auth token refresh interceptor** in web api.ts with request queue for concurrent 401s
-- **Audit logging** — lib/audit.ts + integrated into auth, expense, receipt routes
-- **RLS invites_accept policy fixed** — WITH CHECK for valid transitions
-- **supabase-server.ts fixed** — await cookies() for Next.js
-- **Updated .env.example** — strong JWT hint, no weak defaults
-- **Dockerfile** for API + .dockerignore
-- **docker-compose.yml** — removed deprecated version key
-- **next-env.d.ts** added
-- **Blockchain** — receiptCount increment fix, 5 unit tests, improved deploy script, .env.example, test deps
-- **Mobile app fully rewritten**:
-
-#### Mobile Files Created
-| File | Purpose |
-|------|---------|
-| `apps/mobile/pubspec.yaml` | Production deps: dio, provider, image_picker, flutter_secure_storage, flutter_native_splash, flutter_launcher_icons, intl |
-| `lib/config/api_config.dart` | Env-based base URL, timeouts, retries |
-| `lib/config/theme.dart` | Full Material 3 theme (system font, custom colors, input/card/button themes) |
-| `lib/models/user.dart` | User, Tenant, AuthResponse, RegisterRequest with JSON |
-| `lib/models/receipt.dart` | Receipt, ReceiptData, DashboardData, Expense, ExpenseCategory, Budget, CategoryExpense, MonthlyTrend |
-| `lib/services/api_client.dart` | Dio plain class (no singleton), auto Bearer token, 401 refresh + Completer queue, multipart upload |
-| `lib/services/auth_service.dart` | Login/register/logout, tryAutoLogin with FlutterSecureStorage, token refresh callbacks |
-| `lib/providers/auth_provider.dart` | AuthStatus enum, login/register/logout/tryAutoLogin with error state |
-| `lib/providers/dashboard_provider.dart` | loadDashboard/loadExpenses/loadReceipts/loadBudgets/uploadReceipt |
-| `lib/widgets/common_widgets.dart` | LoadingOverlay, ErrorView, EmptyState, StatusBadge, SectionHeader, AmountText |
-| `lib/main.dart` | MultiProvider (shared ApiClient), AppShell with auto-login routing |
-| `lib/screens/login_screen.dart` | Email/password form, error display, Google sign-in placeholder, register navigation |
-| `lib/screens/register_screen.dart` | 2-step: account info → company details with slug auto-generation |
-| `lib/screens/home_screen.dart` | IndexedStack 4 tabs (Dashboard/Scan/Expenses/Budgets), animated bottom nav, auth guard |
-| `lib/screens/dashboard_screen.dart` | Live API: spending card, stats row, budget progress, category bars, recent expenses; pull-to-refresh |
-| `lib/screens/upload_receipt_screen.dart` | Camera/gallery picker via modal sheet, preview, upload with progress, OCR info card |
-| `lib/screens/expenses_screen.dart` | Expense list with pull-to-refresh, tags, category, amount |
-| `lib/screens/budgets_screen.dart` | Budget list with progress bars, period labels, color-coded thresholds |
+- **Audit & fixes** — 40+ findings, Zod validation on all CRUD, Redis leak fix, receipt amount=0 fix, export PROCESSING hang fix, dashboard crash fix, dead deps removed, rate limiting, FINALIZED status, token refresh interceptor with queue, audit logging, RLS policy fix, supabase-server.ts await cookies(), .env.example cleanup, Dockerfile/docker-compose
+- **Blockchain** — receiptCount increment fix, 5 unit tests, improved deploy/verify scripts, .env.example
+- **Mobile app fully rewritten** — 16 files across models/services/providers/screens/widgets, full Provider architecture, Dio with auto-refresh, flutter_secure_storage auth persistence, camera/gallery receipt upload with progress
+- **Mobile fixes v2** — permissions in AndroidManifest, SDK 35/23/35, appId, XFile→File fix, tab switching wiring, unused deps removed, Inter font removed, iOS Info.plist permissions, flutter analyze 0 issues
+- **Web fixes** — budgets CRUD page + modal form, Add Expense modal, Content-Type fix (api.ts + upload callers), manifest.json start_url fix, error+retry UI on 4 pages
+- **Mobile polish** — 4 button handlers (Lupa Password dialog, Google Sign-In dialog, Tambah navigasi, Simpan Struk pop back), logout→LoginScreen navigation fix, duplicate fontWeight fix
+- **Android signing** — release config in build.gradle.kts, key.properties.example, create-keystore.ps1, .gitignore
+- **Env var safety** — non-null assertions replaced with graceful runtime checks in supabase.ts + middleware/auth.ts
+- **API cleanups** — unused deps removed (jsonwebtoken, uuid, etc), audit logs on 12+ endpoints, Zod validation for member role PATCH, InviteStatus.ACCEPTED enum, chainId type fix
+- **Docker** — HEALTHCHECK + USER nobody, COPY paths fixed for packages/api + packages/db
+- **Auth scalability** — removed listUsers() (ALL users fetched), register catches Supabase "already exists"
+- **Test infrastructure** — vitest.config.ts, 15 passing API tests, supertest dep
+- **PWA** — 192x192 + 512x512 icons created
+- **Mobile assets** — splash_logo.png, app_icon.png, app_icon_foreground.png created, splash/launcher icons configs uncommented
+- **Web restructure** — website converted to pure company profile with Play Store/App Store download buttons, removed all user auth pages (login/register/dashboard), middleware only protects /admin/*
+- **Admin dashboard** — /admin/login (Supabase auth), /admin/layout (sidebar + logout), /admin (stats overview with cards, status breakdown, activity, monthly trend), /admin/users (search + pagination table), /admin/tenants (search + pagination table with member/receipt/expense counts)
+- **API admin routes** — GET /admin/stats, /admin/users, /admin/tenants registered in index.ts
+- **Build verified** — next build sukses (8 static pages), flutter analyze 0 issues, API 15 tests pass, blockchain 5 tests pass
 
 ### Next Steps
-1. Create Android Keystore + configure `android/app/build.gradle.kts` signingConfigs
-2. Add Inter font .ttf files to `assets/fonts/` and uncomment pubspec font section
-3. Add splash logo + app icon PNGs and uncomment pubspec flutter_native_splash/flutter_launcher_icons sections
-4. Set up Firebase if push notifications for budget alerts
-5. Test end-to-end auth flow (register → login → auto-login → logout → token refresh)
-6. Build signed APK/AAB → Play Store internal testing
-7. Setup vitest config + write integration tests for API package
+1. **Setup infrastructure** — Supabase project + `.env` files + PostgreSQL + Redis + Prisma migrate
+2. **Android keystore** — install Java, run `create-keystore.ps1`
+3. **Play Store / App Store links** — fill in real download URLs on landing page CTA buttons
+4. **Error boundaries** — add `error.tsx` at each route segment for production UX (optional)
+5. **Admin detail pages** — user detail, receipt detail pages (optional)
+6. **Firebase setup** — push notifications for budget alerts (optional)
 
 ## Critical Notes
-- **Android dir from** `flutter create --platforms=android .`, **iOS dir from** `flutter create --platforms=ios .` — Flutter SDK di `C:\Users\Budy Djajani\Documents\GitHub\flutter`
-- **Mobile API client shares single instance** — created in main.dart, injected into both AuthProvider and DashboardProvider
-- **"Bahasa Indonesia" locale (`id`)** is the default app language
-- **Receipt upload** uses multipart/form-data via Dio FormData with send progress
-- **Blockchain** contract deployed to Base Sepolia (chainId 84532) with Hardhat
-- **CORS**: Express API configured for web; mobile may need adjustment if API URL differs
-- **Dockerfile** at `packages/api/Dockerfile` + `.dockerignore` at repo root
+- **Web**: Admin dashboard di `/admin/*`, landing page di `/` (company profile). Login/register only via mobile app.
+- **Mobile**: Provider (not Riverpod/Bloc), Dio with auto Bearer + 401 refresh + request queue, flutter_secure_storage
+- **Bahasa Indonesia** (`id`) adalah default app language
+- **Blockchain**: Base Sepolia (chainId 84532)
+- **Build**: `next build` → 0 errors (8 static pages), `flutter analyze` → 0 issues, `npm test` → 15 passing, `npx hardhat test` → 5 passing
+- **Android keystore**: Java belum terinstall di PATH environment
+
+## Relevant Files
+| File | Purpose |
+|------|---------|
+| `apps/web/src/app/page.tsx` | Company profile landing page with download buttons |
+| `apps/web/src/app/admin/layout.tsx` | Admin sidebar + auth guard |
+| `apps/web/src/app/admin/login/page.tsx` | Admin login form (Supabase auth) |
+| `apps/web/src/app/admin/page.tsx` | Admin dashboard stats overview |
+| `apps/web/src/app/admin/users/page.tsx` | Users list with search + pagination |
+| `apps/web/src/app/admin/tenants/page.tsx` | Tenants list with search + pagination |
+| `apps/web/src/middleware.ts` | Protects only /admin/* routes |
+| `packages/api/src/routes/admin.ts` | Admin API endpoints (stats, users, tenants) |
+| `packages/api/src/index.ts` | API entry — adminRouter registered |
+| `apps/web/src/lib/api.ts` | Dio-like fetch wrapper with token refresh queue |
+| `apps/mobile/android/create-keystore.ps1` | Keystore generation script |
+| `apps/mobile/android/key.properties.example` | Signing config template |
 
 ## Commands
 ```bash
-# Platform dirs already generated via flutter create .
-# Get dependencies if needed (run from apps/mobile/)
-flutter pub get
-
-# Build Android (after setup)
-cd apps/mobile && flutter build appbundle --release
-
-# Run mobile
-cd apps/mobile && flutter run
+# Web dev
+cd apps/web && npm run dev
 
 # API dev
 cd packages/api && npm run dev
 
-# Web dev
-cd apps/web && npm run dev
+# API tests
+cd packages/api && npm test
 
 # Blockchain tests
 cd packages/blockchain && npx hardhat test
 
-# API tests
-cd packages/api && npm test
+# Mobile run
+cd apps/mobile && flutter run
+
+# Mobile build
+cd apps/mobile && flutter build appbundle --release
 ```
-
-## Session Log — 2026-05-29
-
-### Actions Taken — Production Readiness Fixes
-1. **Mobile AndroidManifest.xml** — added CAMERA, INTERNET, READ_EXTERNAL_STORAGE, READ_MEDIA_IMAGES permissions
-2. **Mobile build.gradle.kts** — set appId to com.jagafinance.mobile, pinned SDK versions (compile 35, min 23, target 35), updated release signing comment
-3. **Mobile upload_receipt_screen.dart** — fixed XFile to File crash bug (added dart:io import, replaced `as dynamic` with `File()`)
-4. **Mobile dashboard_screen + home_screen** — wired _switchTab callback to actually switch tabs in HomeScreen
-5. **Mobile pubspec.yaml** — removed 4 unused deps (permission_handler, fl_chart, shimmer, cached_network_image); removed Inter font bundle refs; commented out splash/launcher icons configs
-6. **Mobile config/theme.dart** — removed all fontFamily Inter references (uses system font)
-7. **Mobile widget_test.dart** — fixed to match JagaFinanceApp class
-8. **Mobile iOS platform** — generated via `flutter create --platforms=ios .` + added NSCameraUsageDescription and NSPhotoLibraryUsageDescription to Info.plist
-9. **API package.json** — removed unused deps (jsonwebtoken, uuid, @types/jsonwebtoken, @types/uuid)
-10. **API .env.example** — added FRONTEND_URL and RESEND_API_KEY
-11. **API audit logging** — added createAuditLog to 12 endpoints across tenant, invite, category, budget, expense bulk, and export routes
-12. **API tenant.ts** — added Zod validation (updateMemberRoleSchema) for PATCH member role endpoint
-13. **API middleware/auth.ts** — replaced hardcoded ACCEPTED string with InviteStatus.ACCEPTED enum
-14. **API routes/receipt.ts** — fixed chainId comparison type safety
-15. **SQL migration 006** — added FINALIZED to receipt_status enum, 5 blockchain columns, and index
-16. **Dockerfile** — added HEALTHCHECK and USER nobody
-17. **Root .env.example** — added FRONTEND_URL and 6 blockchain env vars
-18. **Blockchain deploy script** — added RPC_URL and PRIVATE_KEY to deployment output
-19. **Blockchain verify script** — added usage hint for required address argument
-20. **flutter analyze** — clean run, no issues found
