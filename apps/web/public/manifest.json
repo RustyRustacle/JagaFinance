@@ -2,7 +2,7 @@
   "name": "JagaFinance - Receipt & Expense Intelligence",
   "short_name": "JagaFinance",
   "description": "Digitize physical receipts into financial reports instantly",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3B82F6",
