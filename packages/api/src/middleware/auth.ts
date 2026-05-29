@@ -5,10 +5,16 @@ import { prisma, Role, InviteStatus } from "@jagafinance/db";
 
 
 
-const supabaseAnon = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
-);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    "SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment"
+  );
+}
+
+const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface AuthRequest extends Request {
 user?: {
