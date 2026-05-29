@@ -14,7 +14,7 @@ coverage/
 .vscode/settings.json
 credentials/
 *.md
-!README.md
+!/README.md
 .opencode/
 *.log
 packages/blockchain/artifacts/
