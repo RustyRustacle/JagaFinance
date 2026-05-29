@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
-import { Search, Loader2, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { Search, Loader2, AlertTriangle, ExternalLink } from "lucide-react";
 
 interface User {
   id: string;
@@ -91,7 +92,11 @@ export default function AdminUsersPage() {
             <tbody>
               {users.map((u) => (
                 <tr key={u.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-5 py-3.5 text-gray-900 font-medium">{u.email}</td>
+                  <td className="px-5 py-3.5">
+                    <Link href={`/admin/users/${u.id}`} className="font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                      {u.email} <ExternalLink className="h-3 w-3" />
+                    </Link>
+                  </td>
                   <td className="px-5 py-3.5">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                       u.role === "ADMIN" ? "bg-purple-50 text-purple-700" :
