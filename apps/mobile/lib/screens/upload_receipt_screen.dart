@@ -248,7 +248,12 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      if (_selectedImage != null) {
+                        _pickImage(ImageSource.camera);
+                      }
+                      Navigator.of(context).pop();
+                    },
                     icon: const Icon(Icons.save_rounded, size: 20),
                     label: const Text('Simpan Struk'),
                   ),

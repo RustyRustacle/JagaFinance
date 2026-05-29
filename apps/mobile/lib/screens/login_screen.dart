@@ -66,7 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text(
                   'JagaFinance',
                   style: TextStyle(
-                    fontFamily: 'Inter',
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.textPrimary,
@@ -120,7 +119,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Lupa Password'),
+                          content: const Text('Fitur reset password akan segera hadir. Hubungi admin Anda untuk bantuan.'),
+                          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
+                        ),
+                      );
+                    },
                     child: const Text('Lupa password?', style: TextStyle(fontSize: 13)),
                   ),
                 ),
@@ -187,7 +195,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Google Sign-In'),
+                          content: const Text('Fitur login dengan Google akan segera hadir.'),
+                          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup'))],
+                        ),
+                      );
+                    },
                     icon: const Text('G', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                     label: const Text('Lanjutkan dengan Google'),
                   ),

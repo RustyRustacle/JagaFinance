@@ -5,6 +5,7 @@ import '../config/theme.dart';
 import '../models/receipt.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/common_widgets.dart';
+import 'upload_receipt_screen.dart';
 
 class ExpensesScreen extends StatefulWidget {
   const ExpensesScreen({super.key});
@@ -22,7 +23,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DashboardProvider>()..loadExpenses(refresh: true)..loadCategories();
+      context.read<DashboardProvider>()..loadExpenses(refresh: true, categoryId: _selectedCategoryId, status: _selectedStatus)..loadCategories();
     });
     _scrollController.addListener(_onScroll);
   }
@@ -40,7 +41,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   }
 
   Future<void> _onRefresh() async {
-    await context.read<DashboardProvider>().loadExpenses(refresh: true);
+    await context.read<DashboardProvider>().loadExpenses(refresh: true, categoryId: _selectedCategoryId, status: _selectedStatus);
   }
 
   @override
@@ -61,7 +62,11 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     children: [
                       _filterChip(Icons.filter_list_rounded, 'Filter', () => _showFilterSheet()),
                       const SizedBox(width: 8),
-                      _filterChip(Icons.add_rounded, 'Tambah', () {}),
+                      _filterChip(Icons.add_rounded, 'Tambah', () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const UploadReceiptScreen()),
+                        );
+                      }),
                     ],
                   ),
                 ],
@@ -222,12 +227,12 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 _filterOption('Semua', _selectedCategoryId == null, () {
                   setState(() => _selectedCategoryId = null);
                   Navigator.pop(context);
-                  dash.loadExpenses(refresh: true);
+                  dash.loadExpenses(refresh: true, categoryId: null, status: _selectedStatus);
                 }),
                 ...dash.categories.map((c) => _filterOption(c.name, _selectedCategoryId == c.id, () {
                   setState(() => _selectedCategoryId = c.id);
                   Navigator.pop(context);
-                  dash.loadExpenses(refresh: true);
+                  dash.loadExpenses(refresh: true, categoryId: c.id, status: _selectedStatus);
                 })),
               ],
             ),
@@ -239,9 +244,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               children: ['Semua', 'DRAFT', 'CONFIRMED', 'RECONCILED'].map((s) {
                 final selected = _selectedStatus == s || (_selectedStatus == null && s == 'Semua');
                 return _filterOption(s == 'Semua' ? 'Semua' : s, selected, () {
-                  setState(() => _selectedStatus = s == 'Semua' ? null : s);
+                  final newStatus = s == 'Semua' ? null : s;
+                  setState(() => _selectedStatus = newStatus);
                   Navigator.pop(context);
-                  dash.loadExpenses(refresh: true);
+                  dash.loadExpenses(refresh: true, categoryId: _selectedCategoryId, status: newStatus);
                 });
               }).toList(),
             ),
