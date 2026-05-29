@@ -5,6 +5,9 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+  const isAdminLogin = request.nextUrl.pathname === "/admin/login";
+
   if (!supabaseUrl || !supabaseAnonKey) {
     return NextResponse.next({ request });
   }
@@ -13,36 +16,20 @@ export async function middleware(request: NextRequest) {
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      get(name: string) {
-        return request.cookies.get(name)?.value;
-      },
-      set(name: string, value: string, options: Record<string, unknown>) {
-        supabaseResponse.cookies.set(name, value, options);
-      },
-      remove(name: string, options: Record<string, unknown>) {
-        supabaseResponse.cookies.set(name, "", { ...options, maxAge: 0 });
-      },
+      get(name: string) { return request.cookies.get(name)?.value; },
+      set(name: string, value: string, options: Record<string, unknown>) { supabaseResponse.cookies.set(name, value, options); },
+      remove(name: string, options: Record<string, unknown>) { supabaseResponse.cookies.set(name, "", { ...options, maxAge: 0 }); },
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const isAuthPage =
-    request.nextUrl.pathname === "/login" ||
-    request.nextUrl.pathname === "/register";
-
-  const isProtectedRoute = !isAuthPage;
-
-  if (!user && isProtectedRoute) {
-    const redirectUrl = new URL("/login", request.url);
-    redirectUrl.searchParams.set("redirect", request.nextUrl.pathname);
-    return NextResponse.redirect(redirectUrl);
+  if (isAdminRoute && !user && !isAdminLogin) {
+    return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
-  if (user && isAuthPage) {
-    return NextResponse.redirect(new URL("/", request.url));
+  if (isAdminLogin && user) {
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
   return supabaseResponse;

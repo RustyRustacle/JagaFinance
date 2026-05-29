@@ -10,6 +10,7 @@ import {
   ArrowRight,
   CheckCircle,
   Star,
+  Smartphone,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -49,18 +50,13 @@ function Navbar() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="text-sm font-medium text-gray-700 hover:text-gray-900 px-4 py-2 rounded-xl hover:bg-gray-50 transition-all"
+            <a
+              href="#"
+              className="inline-flex items-center gap-2 text-sm font-medium text-white px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all duration-200 hover:scale-[1.02]"
             >
-              Masuk
-            </Link>
-            <Link
-              href="/register"
-              className="text-sm font-medium text-white px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all duration-200 hover:scale-[1.02]"
-            >
-              Daftar Gratis
-            </Link>
+              <Smartphone className="h-4 w-4" />
+              Download di Play Store
+            </a>
           </div>
         </div>
       </div>
@@ -96,18 +92,20 @@ function Hero() {
           </p>
 
           <div className="flex items-center justify-center gap-4">
-            <Link
-              href="/register"
+            <a
+              href="#"
               className="group inline-flex items-center gap-2 px-8 py-3.5 text-white font-semibold rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
             >
-              Mulai Gratis
+              <Smartphone className="h-5 w-5" />
+              Unduh di Play Store
               <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            </a>
             <a
-              href="#features"
+              href="#"
               className="inline-flex items-center gap-2 px-8 py-3.5 text-gray-700 font-semibold rounded-2xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all"
             >
-              Lihat Fitur
+              <Smartphone className="h-5 w-5" />
+              Unduh di App Store
             </a>
           </div>
 
@@ -305,19 +303,21 @@ function CTASection() {
           Gratis selamanya, tanpa kartu kredit.
         </p>
         <div className="flex items-center justify-center gap-4">
-          <Link
-            href="/register"
+          <a
+            href="#"
             className="inline-flex items-center gap-2 px-8 py-3.5 text-gray-900 font-semibold rounded-2xl bg-white hover:bg-gray-100 shadow-xl transition-all duration-200 hover:scale-[1.02]"
           >
-            Daftar Gratis
+            <Smartphone className="h-5 w-5" />
+            Download di Play Store
             <ArrowRight className="h-5 w-5" />
-          </Link>
-          <Link
-            href="/login"
+          </a>
+          <a
+            href="#"
             className="inline-flex items-center gap-2 px-8 py-3.5 text-white font-semibold rounded-2xl border border-gray-600 hover:border-gray-500 hover:bg-white/5 transition-all"
           >
-            Masuk
-          </Link>
+            <Smartphone className="h-5 w-5" />
+            Download di App Store
+          </a>
         </div>
       </div>
     </section>
@@ -369,6 +369,7 @@ function Footer() {
           <div className="flex items-center gap-6">
             <a href="#" className="text-sm text-gray-500 hover:text-gray-700">Kebijakan Privasi</a>
             <a href="#" className="text-sm text-gray-500 hover:text-gray-700">Syarat & Ketentuan</a>
+            <Link href="/admin/login" className="text-sm text-gray-400 hover:text-gray-600">&middot; Admin</Link>
           </div>
         </div>
       </div>
