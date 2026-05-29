@@ -1,307 +1,234 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../config/theme.dart';
+import '../models/receipt.dart';
+import '../providers/auth_provider.dart';
+import '../providers/dashboard_provider.dart';
+import '../widgets/common_widgets.dart';
 
-class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key, this.onTabChange});
+
+  final void Function(int)? onTabChange;
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DashboardProvider>()..loadDashboard()..loadExpenses(refresh: true)..loadBudgets();
+    });
+  }
+
+  Future<void> _onRefresh() async {
+    await Future.wait([
+      context.read<DashboardProvider>().loadDashboard(),
+      context.read<DashboardProvider>().loadExpenses(refresh: true),
+      context.read<DashboardProvider>().loadBudgets(),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-
-              // Top bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Good morning,',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          color: const Color(0xFF64748B),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Budi 👋',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'B',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Main financial card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF3B82F6).withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                _buildTopBar(auth),
+                const SizedBox(height: 20),
+                Consumer<DashboardProvider>(
+                  builder: (context, dash, _) {
+                    if (dash.isLoading) return const SizedBox(height: 200, child: LoadingOverlay(message: 'Memuat dashboard...'));
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Total Spending',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            color: Colors.white.withOpacity(0.8),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.trending_up, size: 14, color: Colors.white),
-                              SizedBox(width: 4),
-                              Text(
-                                '+12.5%',
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        _buildTotalSpendingCard(dash.dashboard),
+                        const SizedBox(height: 16),
+                        _buildStatsRow(dash.dashboard),
+                        const SizedBox(height: 20),
+                        if (dash.dashboard.monthlyTrend.isNotEmpty) ...[
+                          _buildTrendChart(dash.dashboard.monthlyTrend),
+                          const SizedBox(height: 20),
+                        ],
+                        if (dash.budgets.isNotEmpty) ...[
+                          _buildBudgetSection(dash),
+                          const SizedBox(height: 20),
+                        ],
+                        _buildRecentExpenses(dash.expenses),
+                        const SizedBox(height: 24),
                       ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Rp 14.280.000',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 32,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        _buildCardStat('Budget Remaining', 'Rp 5.72M'),
-                        const SizedBox(width: 16),
-                        _buildCardStat('Days Left', '18'),
-                      ],
-                    ),
-                  ],
+                    );
+                  },
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              // Stats row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      Icons.document_scanner_outlined,
-                      'OCR Success',
-                      '98.5%',
-                      const Color(0xFF10B981),
-                      const Color(0xFFD1FAE5),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      Icons.description_outlined,
-                      'Reports Ready',
-                      '24',
-                      const Color(0xFF8B5CF6),
-                      const Color(0xFFEDE9FE),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Spending trend
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Spending Trend',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(foregroundColor: const Color(0xFF3B82F6)),
-                    child: const Text(
-                      'This Month',
-                      style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Bar chart
-              Container(
-                width: double.infinity,
-                height: 140,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: CustomPaint(
-                  size: const Size(double.infinity, 108),
-                  painter: _BarChartPainter(),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Recent receipts header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Recent Receipts',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(foregroundColor: const Color(0xFF3B82F6)),
-                    child: const Text(
-                      'See All',
-                      style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Receipt items
-              _buildReceiptItem('Starbucks Coffee', 'F&B', 'Rp 85.000', '2h ago'),
-              const SizedBox(height: 10),
-              _buildReceiptItem('Shopee Marketplace', 'Office Supply', 'Rp 2.450.000', '5h ago'),
-              const SizedBox(height: 10),
-              _buildReceiptItem('Gojek Transport', 'Transport', 'Rp 45.000', '1d ago'),
-              const SizedBox(height: 10),
-              _buildReceiptItem('Telkom Indonesia', 'Operational', 'Rp 1.200.000', '2d ago'),
-              const SizedBox(height: 24),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCardStat(String label, String value) {
-    return Expanded(
+  Widget _buildTopBar(AuthProvider auth) {
+    final initial = (auth.user?.name ?? auth.user?.email ?? 'U')[0].toUpperCase();
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _greeting(),
+              style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              auth.user?.name ?? 'Pengguna',
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+            ),
+          ],
+        ),
+        PopupMenuButton<String>(
+          offset: const Offset(0, 48),
+          onSelected: (v) async {
+            if (v == 'logout') {
+              final navigator = Navigator.of(context);
+              await context.read<AuthProvider>().logout();
+              if (mounted) {
+                navigator.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const Scaffold()),
+                  (route) => false,
+                );
+              }
+            }
+          },
+          itemBuilder: (_) => [
+            const PopupMenuItem(value: 'profile', child: ListTile(
+              leading: Icon(Icons.person_outline_rounded, size: 20),
+              title: Text('Profil', style: TextStyle(fontSize: 14)),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+            )),
+            const PopupMenuDivider(),
+            const PopupMenuItem(value: 'logout', child: ListTile(
+              leading: Icon(Icons.logout_rounded, size: 20, color: AppTheme.danger),
+              title: Text('Keluar', style: TextStyle(fontSize: 14, color: AppTheme.danger)),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+            )),
+          ],
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.secondary]),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Center(
+              child: Text(initial, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Selamat pagi,';
+    if (hour < 15) return 'Selamat siang,';
+    if (hour < 18) return 'Selamat sore,';
+    return 'Selamat malam,';
+  }
+
+  Widget _buildTotalSpendingCard(DashboardData data) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppTheme.primary, AppTheme.secondary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: AppTheme.primary.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8)),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 11,
-              color: Colors.white.withOpacity(0.7),
-            ),
+          const Text('Total Pengeluaran Bulan Ini', style: TextStyle(fontSize: 13, color: Colors.white70)),
+          const SizedBox(height: 8),
+          AmountText(
+            amount: data.totalExpenses,
+            fontSize: 32,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
           ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _cardStat('Struk Diproses', '${data.pendingReviews}'),
+              const SizedBox(width: 16),
+              _cardStat('Anggaran Terpakai', '${data.budgetAlerts}'),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(IconData icon, String label, String value, Color color, Color bgColor) {
+  Widget _cardStat(String label, String value) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, color: Colors.white70)),
+          const SizedBox(height: 2),
+          Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsRow(DashboardData data) {
+    return Row(
+      children: [
+        Expanded(child: _statCard(Icons.description_outlined, 'Struk', '${data.totalReceipts}', AppTheme.success, const Color(0xFFD1FAE5))),
+        const SizedBox(width: 12),
+        Expanded(child: _statCard(Icons.pie_chart_rounded, 'Kategori', '${data.expensesByCategory.length}', AppTheme.secondary, const Color(0xFFEDE9FE))),
+      ],
+    );
+  }
+
+  Widget _statCard(IconData icon, String label, String value, Color color, Color bgColor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppTheme.border),
       ),
       child: Row(
         children: [
           Container(
             width: 44,
             height: 44,
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: color, size: 22),
           ),
           const SizedBox(width: 12),
@@ -309,24 +236,9 @@ class DashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
+                Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
                 const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
+                Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
               ],
             ),
           ),
@@ -335,72 +247,196 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildReceiptItem(String merchant, String category, String amount, String time) {
+  Widget _buildTrendChart(List<MonthlyTrend> trends) {
+    final maxAmount = trends.fold<double>(0, (max, t) => t.amount > max ? t.amount : max);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Tren Pengeluaran', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 120,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(trends.length, (i) {
+                final t = trends[i];
+                final height = maxAmount > 0 ? (t.amount / maxAmount) * 100 : 0.0;
+                final monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                final monthNum = int.tryParse(t.month.split('-')[1]) ?? 0;
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: i == 0 ? 0 : 4, right: i == trends.length - 1 ? 0 : 4),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          NumberFormat.decimalPattern('id').format(t.amount.round()),
+                          style: const TextStyle(fontSize: 9, color: AppTheme.textTertiary),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          height: height.clamp(8.0, 100.0),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppTheme.primary, AppTheme.secondary],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          monthNum >= 1 && monthNum <= 12 ? monthNames[monthNum] : t.month,
+                          style: const TextStyle(fontSize: 10, color: AppTheme.textTertiary),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBudgetSection(DashboardProvider dash) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Anggaran',
+          actionLabel: 'Lihat Semua',
+          onAction: () => _switchTab(3),
+        ),
+        const SizedBox(height: 12),
+        ...dash.budgets.take(3).map((b) {
+          final catName = b.category?.name ?? 'Kategori';
+          final spent = dash.dashboard.expensesByCategory.where((c) => c.category == catName).fold<double>(0, (sum, c) => sum + c.amount);
+          final pct = b.amount > 0 ? (spent / b.amount).clamp(0.0, 1.0) : 0.0;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _budgetBar(catName, pct, b.amount, spent),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _budgetBar(String label, double progress, double budget, double spent) {
+    final exceeded = progress >= 1.0;
+    final warning = progress >= 0.8 && !exceeded;
+    final barColor = exceeded ? AppTheme.danger : warning ? AppTheme.warning : AppTheme.primary;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+              ),
+              AmountText(amount: spent, fontSize: 13, color: AppTheme.textSecondary),
+              const Text(' / ', style: TextStyle(fontSize: 13, color: AppTheme.textTertiary)),
+              AmountText(amount: budget, fontSize: 13, color: AppTheme.textSecondary),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 6,
+              backgroundColor: const Color(0xFFF1F5F9),
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentExpenses(List<Expense> expenses) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Pengeluaran Terbaru', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+        const SizedBox(height: 12),
+        if (expenses.isEmpty)
+          const EmptyState(icon: Icons.receipt_long_rounded, title: 'Belum ada pengeluaran', subtitle: 'Mulai dengan mengunggah struk pertama Anda')
+        else
+          ...expenses.take(5).map((e) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _expenseItem(e),
+          )),
+      ],
+    );
+  }
+
+  Widget _expenseItem(Expense exp) {
+    final iconMap = <String, IconData>{
+      'Transportasi': Icons.directions_car_rounded,
+      'Makanan': Icons.restaurant_rounded,
+      'Kantor': Icons.inventory_2_rounded,
+      'Utilitas': Icons.bolt_rounded,
+      'Marketing': Icons.campaign_rounded,
+      'Gaji': Icons.account_balance_wallet_rounded,
+      'Sewa': Icons.home_rounded,
+      'Perjalanan': Icons.flight_rounded,
+    };
+    final catName = exp.category?.name ?? '';
+    final icon = iconMap.entries.firstWhere((e) => catName.contains(e.key), orElse: () => const MapEntry('', Icons.receipt_outlined)).value;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppTheme.border),
       ),
       child: Row(
         children: [
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: const Icon(Icons.receipt_outlined, size: 20, color: Color(0xFF64748B)),
+            decoration: BoxDecoration(color: AppTheme.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppTheme.border)),
+            child: Icon(icon, size: 20, color: AppTheme.textSecondary),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  merchant,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
+                Text(exp.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                 const SizedBox(height: 2),
-                Text(
-                  category,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
+                Text(catName, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                amount,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
+              AmountText(amount: exp.amount, fontSize: 14, fontWeight: FontWeight.w600),
               const SizedBox(height: 2),
               Text(
-                time,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 11,
-                  color: Color(0xFF94A3B8),
-                ),
+                DateFormat('d MMM', 'id').format(exp.expenseDate),
+                style: const TextStyle(fontSize: 11, color: AppTheme.textTertiary),
               ),
             ],
           ),
@@ -408,49 +444,8 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
-}
 
-class _BarChartPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final barPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
-        begin: Alignment.bottomCenter,
-        end: Alignment.topCenter,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final bgPaint = Paint()
-      ..color = const Color(0xFFF1F5F9);
-
-    final values = [0.45, 0.65, 0.55, 0.75, 0.6, 0.85, 0.7, 0.9, 0.78, 0.88, 0.68, 0.82];
-    final barWidth = size.width / values.length - 8;
-
-    for (int i = 0; i < values.length; i++) {
-      final x = i * (barWidth + 8) + 4;
-      final barHeight = size.height * values[i];
-      final top = size.height - barHeight;
-
-      // Background
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(x, 0, barWidth, size.height),
-          const Radius.circular(4),
-        ),
-        bgPaint,
-      );
-
-      // Value
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(x, top, barWidth, barHeight),
-          const Radius.circular(4),
-        ),
-        barPaint,
-      );
-    }
+  void _switchTab(int index) {
+    widget.onTabChange?.call(index);
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

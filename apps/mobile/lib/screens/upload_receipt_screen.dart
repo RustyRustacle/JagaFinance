@@ -1,7 +1,96 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import '../config/theme.dart';
+import '../providers/dashboard_provider.dart';
 
-class UploadReceiptScreen extends StatelessWidget {
+class UploadReceiptScreen extends StatefulWidget {
   const UploadReceiptScreen({super.key});
+
+  @override
+  State<UploadReceiptScreen> createState() => _UploadReceiptScreenState();
+}
+
+class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
+  XFile? _selectedImage;
+  bool _showExtraction = false;
+
+  Future<void> _pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: source, maxWidth: 2048, maxHeight: 2048);
+    if (image != null) {
+      setState(() => _selectedImage = image);
+      if (!mounted) return;
+      final success = await context.read<DashboardProvider>().uploadReceipt(image.path);
+      if (success && mounted) {
+        setState(() => _showExtraction = true);
+        context.read<DashboardProvider>().loadDashboard();
+      }
+    }
+  }
+
+  void _showPickerSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 20),
+              const Text('Pilih Sumber', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _sourceButton(Icons.camera_alt_rounded, 'Kamera', () {
+                      Navigator.pop(context);
+                      _pickImage(ImageSource.camera);
+                    }),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _sourceButton(Icons.photo_library_rounded, 'Galeri', () {
+                      Navigator.pop(context);
+                      _pickImage(ImageSource.gallery);
+                    }),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sourceButton(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.border),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 32, color: AppTheme.primary),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,264 +102,158 @@ class UploadReceiptScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-
-              // Header
-              const Text(
-                'Upload Receipt',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
+              const Text('Pindai Struk', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
               const SizedBox(height: 4),
-              const Text(
-                'Upload a receipt and we\'ll extract the details',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 14,
-                  color: Color(0xFF64748B),
-                ),
-              ),
+              const Text('Unggah struk dan kami akan mengekstrak detailnya secara otomatis',
+                  style: TextStyle(fontSize: 14, color: AppTheme.textSecondary)),
               const SizedBox(height: 20),
-
-              // Upload zone
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 36),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFF3B82F6).withOpacity(0.3),
-                    width: 2,
-                    strokeAlign: BorderSide.strokeAlignInside,
+              GestureDetector(
+                onTap: _showPickerSheet,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 36),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3), width: 2, strokeAlign: BorderSide.strokeAlignInside),
                   ),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDBEAFE),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.cloud_upload_outlined,
-                        size: 28,
-                        color: Color(0xFF3B82F6),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Tap to upload receipt',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'PNG, JPG, PDF up to 10MB',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13,
-                        color: Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
+                  child: _selectedImage != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            File(_selectedImage!.path),
+                            height: 200,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+                              child: const Icon(Icons.cloud_upload_outlined, size: 28, color: AppTheme.primary),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text('Ketuk untuk unggah struk',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                            const SizedBox(height: 4),
+                            const Text('PNG, JPG, PDF hingga 10MB',
+                                style: TextStyle(fontSize: 13, color: AppTheme.textTertiary)),
+                          ],
+                        ),
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Camera / Gallery buttons
               Row(
                 children: [
                   Expanded(
-                    child: _buildActionButton(
-                      Icons.camera_alt_outlined,
-                      'Camera',
-                      const Color(0xFF3B82F6),
-                    ),
+                    child: _actionButton(Icons.camera_alt_outlined, 'Kamera', () => _pickImage(ImageSource.camera)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildActionButton(
-                      Icons.photo_library_outlined,
-                      'Gallery',
-                      const Color(0xFF6366F1),
-                    ),
+                    child: _actionButton(Icons.photo_library_outlined, 'Galeri', () => _pickImage(ImageSource.gallery)),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // Status notification
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF7ED),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFED7AA)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
+              const SizedBox(height: 16),
+              Consumer<DashboardProvider>(
+                builder: (context, dash, _) {
+                  if (dash.isUploading) {
+                    return Container(
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(10),
+                        color: const Color(0xFFFFF7ED),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFED7AA)),
                       ),
-                      child: const Icon(
-                        Icons.hourglass_top_rounded,
-                        size: 20,
-                        color: Color(0xFFF59E0B),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Extraction in progress',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF7C2D12),
-                            ),
+                          Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.warning.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.hourglass_top_rounded, size: 20, color: AppTheme.warning),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text('Mengunggah struk...',
+                                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF7C2D12))),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 2),
-                          const Text(
-                            'Processing receipt via OCR...',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 12,
-                              color: Color(0xFF9A3412),
+                          const SizedBox(height: 12),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: dash.uploadProgress,
+                              minHeight: 6,
+                              backgroundColor: const Color(0xFFE2E8F0),
+                              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.warning),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Color(0xFFF59E0B),
+                    );
+                  }
+                  if (dash.errorMessage != null) {
+                    return Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.danger.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.danger.withValues(alpha: 0.3)),
                       ),
-                    ),
-                  ],
-                ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, size: 20, color: AppTheme.danger),
+                          const SizedBox(width: 12),
+                          Expanded(child: Text(dash.errorMessage!, style: const TextStyle(fontSize: 13, color: AppTheme.danger))),
+                        ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
               ),
-              const SizedBox(height: 16),
-
-              // Progress bar
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              if (_showExtraction && _selectedImage != null) ...[
+                const SizedBox(height: 20),
+                const Text('Hasil Ekstraksi AI', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.card,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  child: Column(
                     children: [
-                      const Text(
-                        'Upload progress',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                      Text(
-                        '75%',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF3B82F6),
-                        ),
-                      ),
+                      _extractionRow(Icons.store_outlined, 'Merchant', 'Menunggu OCR...'),
+                      const Divider(height: 24),
+                      _extractionRow(Icons.calendar_today_outlined, 'Tanggal', 'Diproses'),
+                      const Divider(height: 24),
+                      _extractionRow(Icons.attach_money_outlined, 'Jumlah', 'Dihitung'),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: 0.75,
-                      minHeight: 6,
-                      backgroundColor: const Color(0xFFE2E8F0),
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
-                    ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.save_rounded, size: 20),
+                    label: const Text('Simpan Struk'),
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // AI Extraction title
-              const Text(
-                'AI Extraction Result',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              // Extraction card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Column(
-                  children: [
-                    _buildExtractionRow(
-                      Icons.store_outlined,
-                      'Merchant',
-                      'Warung Pojok',
-                    ),
-                    const Divider(height: 24, color: Color(0xFFF1F5F9)),
-                    _buildExtractionRow(
-                      Icons.calendar_today_outlined,
-                      'Date',
-                      '07 May 2026',
-                    ),
-                    const Divider(height: 24, color: Color(0xFFF1F5F9)),
-                    _buildExtractionRow(
-                      Icons.category_outlined,
-                      'Category',
-                      'F&B',
-                    ),
-                    const Divider(height: 24, color: Color(0xFFF1F5F9)),
-                    _buildExtractionRow(
-                      Icons.attach_money_outlined,
-                      'Amount',
-                      'Rp 125.000',
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Save button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  child: const Text('Save Receipt'),
-                ),
-              ),
+              ],
               const SizedBox(height: 24),
             ],
           ),
@@ -279,66 +262,40 @@ class UploadReceiptScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 20, color: color),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-        ],
+  Widget _actionButton(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: AppTheme.card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.border),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: AppTheme.primary),
+            const SizedBox(width: 8),
+            Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildExtractionRow(IconData icon, String label, String value) {
+  Widget _extractionRow(IconData icon, String label, String value) {
     return Row(
       children: [
         Container(
           width: 36,
           height: 36,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: Icon(icon, size: 18, color: const Color(0xFF64748B)),
+          decoration: BoxDecoration(color: AppTheme.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppTheme.border)),
+          child: Icon(icon, size: 18, color: AppTheme.textSecondary),
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 13,
-              color: Color(0xFF64748B),
-            ),
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF0F172A),
-          ),
-        ),
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary))),
+        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
       ],
     );
   }
