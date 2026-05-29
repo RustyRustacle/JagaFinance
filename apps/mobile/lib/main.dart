@@ -1,108 +1,108 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+import 'config/theme.dart';
+import 'providers/auth_provider.dart';
+import 'providers/dashboard_provider.dart';
+import 'services/api_client.dart';
+import 'services/auth_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
 void main() {
-  runApp(const VaultLedgerApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  final apiClient = ApiClient();
+  final authService = AuthService();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(authService)..tryAutoLogin(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => DashboardProvider(apiClient),
+        ),
+      ],
+      child: const JagaFinanceApp(),
+    ),
+  );
 }
 
-class VaultLedgerApp extends StatelessWidget {
-  const VaultLedgerApp({super.key});
+class JagaFinanceApp extends StatelessWidget {
+  const JagaFinanceApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'VaultLedger',
+      title: 'JagaFinance',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFF3B82F6),
-          primaryContainer: Color(0xFFDBEAFE),
-          secondary: Color(0xFF6366F1),
-          surface: Colors.white,
-          onPrimary: Colors.white,
-          onSurface: Color(0xFF0F172A),
-          outline: Color(0xFFE2E8F0),
-        ),
-        fontFamily: 'Inter',
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          centerTitle: false,
-          backgroundColor: Colors.transparent,
-          foregroundColor: Color(0xFF0F172A),
-          titleTextStyle: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF3B82F6),
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+      theme: AppTheme.light,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('id', 'ID'),
+        Locale('en', 'US'),
+      ],
+      locale: const Locale('id', 'ID'),
+      home: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          switch (auth.status) {
+            case AuthStatus.initial:
+            case AuthStatus.loading:
+              return const _SplashScreen();
+            case AuthStatus.authenticated:
+              return const HomeScreen();
+            case AuthStatus.unauthenticated:
+            case AuthStatus.error:
+              return const LoginScreen();
+          }
+        },
+      ),
+    );
+  }
+}
+
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: const Icon(Icons.receipt_long_rounded, size: 40, color: AppTheme.primary),
             ),
-            textStyle: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+            const SizedBox(height: 24),
+            const Text(
+              'JagaFinance',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
             ),
-          ),
-        ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF0F172A),
-            side: const BorderSide(color: Color(0xFFE2E8F0)),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+            const SizedBox(height: 32),
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
             ),
-            textStyle: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: const Color(0xFFF8FAFC),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
-          ),
-          labelStyle: const TextStyle(
-            fontFamily: 'Inter',
-            color: Color(0xFF64748B),
-            fontSize: 14,
-          ),
-        ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFFE2E8F0)),
-          ),
-          color: Colors.white,
+          ],
         ),
       ),
-      home: const LoginScreen(),
     );
   }
 }
