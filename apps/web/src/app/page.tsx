@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   Scan,
@@ -11,6 +12,9 @@ import {
   CheckCircle,
   Star,
   Smartphone,
+  Check,
+  Zap,
+  Crown,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -21,6 +25,7 @@ export default function LandingPage() {
       <StatsBar />
       <Features />
       <HowItWorks />
+      <PricingSection />
       <CTASection />
       <Footer />
     </div>
@@ -33,11 +38,13 @@ function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-600/25">
-              <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="JagaFinance"
+              width={64}
+              height={64}
+              className="object-contain"
+            />
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
               JagaFinance
             </span>
@@ -96,7 +103,6 @@ function Hero() {
               href="#"
               className="group inline-flex items-center gap-2 px-8 py-3.5 text-white font-semibold rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
             >
-              <Smartphone className="h-5 w-5" />
               Unduh di Play Store
               <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </a>
@@ -104,7 +110,6 @@ function Hero() {
               href="#"
               className="inline-flex items-center gap-2 px-8 py-3.5 text-gray-700 font-semibold rounded-2xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all"
             >
-              <Smartphone className="h-5 w-5" />
               Unduh di App Store
             </a>
           </div>
@@ -287,6 +292,116 @@ function HowItWorks() {
   );
 }
 
+function PricingSection() {
+  const plans = [
+    {
+      name: "Pro",
+      slug: "pro",
+      price: 5,
+      description: "Cocok untuk bisnis kecil yang ingin mulai digitalisasi keuangan.",
+      gradient: "from-blue-500 to-cyan-500",
+      shadow: "shadow-blue-600/25",
+      icon: Zap,
+      features: [
+        "Manajemen pengeluaran",
+        "Upload nota (OCR)",
+        "Laporan dasar",
+        "Hingga 3 anggota tim",
+        "Dukungan email",
+      ],
+    },
+    {
+      name: "Ultra",
+      slug: "ultra",
+      price: 10,
+      description: "Untuk perusahaan dengan kebutuhan fitur lengkap dan prioritas.",
+      gradient: "from-amber-500 to-orange-500",
+      shadow: "shadow-amber-600/25",
+      icon: Crown,
+      popular: true,
+      features: [
+        "Manajemen pengeluaran",
+        "Upload nota (OCR)",
+        "Laporan lanjutan",
+        "Anggota tim tidak terbatas",
+        "Ekspor data",
+        "Audit log",
+        "Dukungan prioritas",
+        "API akses",
+      ],
+    },
+  ];
+
+  return (
+    <section id="pricing" className="py-24 bg-gray-50/50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            Pilih{" "}
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+              Paket Langganan
+            </span>
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Nikmati fitur sesuai kebutuhan bisnis Anda. Beralih atau batalkan kapan saja.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+          {plans.map((plan) => (
+            <div
+              key={plan.slug}
+              className={`relative p-8 rounded-2xl border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+                plan.popular
+                  ? "border-amber-200 shadow-lg shadow-amber-600/10 ring-2 ring-amber-400/50"
+                  : "border-gray-100 shadow-sm"
+              }`}
+            >
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold rounded-full shadow-lg">
+                  PALING POPULER
+                </div>
+              )}
+
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${plan.gradient} flex items-center justify-center mb-5 shadow-lg`}>
+                <plan.icon className="h-6 w-6 text-white" />
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+              <p className="text-sm text-gray-600 mb-6">{plan.description}</p>
+
+              <div className="mb-8">
+                <span className="text-5xl font-bold text-gray-900">${plan.price}</span>
+                <span className="text-gray-500 ml-2">/bulan</span>
+              </div>
+
+              <ul className="space-y-3 mb-8">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+                    <span className="text-sm text-gray-700">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <a
+                href="#"
+                className={`block text-center w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
+                  plan.popular
+                    ? "text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-lg shadow-amber-600/25"
+                    : "text-gray-700 bg-gray-100 hover:bg-gray-200"
+                }`}
+              >
+                Pilih {plan.name}
+              </a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CTASection() {
   return (
     <section className="py-24 bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950 relative overflow-hidden">
@@ -307,7 +422,6 @@ function CTASection() {
             href="#"
             className="inline-flex items-center gap-2 px-8 py-3.5 text-gray-900 font-semibold rounded-2xl bg-white hover:bg-gray-100 shadow-xl transition-all duration-200 hover:scale-[1.02]"
           >
-            <Smartphone className="h-5 w-5" />
             Download di Play Store
             <ArrowRight className="h-5 w-5" />
           </a>
@@ -315,7 +429,6 @@ function CTASection() {
             href="#"
             className="inline-flex items-center gap-2 px-8 py-3.5 text-white font-semibold rounded-2xl border border-gray-600 hover:border-gray-500 hover:bg-white/5 transition-all"
           >
-            <Smartphone className="h-5 w-5" />
             Download di App Store
           </a>
         </div>
@@ -331,11 +444,13 @@ function Footer() {
         <div className="grid md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
-                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
+              <Image
+                src="/logo.png"
+                alt="JagaFinance"
+                width={64}
+                height={64}
+                className="object-contain"
+              />
               <span className="text-lg font-bold text-gray-900">JagaFinance</span>
             </Link>
             <p className="text-sm text-gray-600 max-w-sm">
@@ -348,7 +463,7 @@ function Footer() {
             <ul className="space-y-3">
               {["Fitur", "Harga", "API", "Integrasi"].map((item) => (
                 <li key={item}>
-                  <a href="#" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">{item}</a>
+                  <a href={item === "Harga" ? "#pricing" : "#"} className="text-sm text-gray-600 hover:text-gray-900 transition-colors">{item}</a>
                 </li>
               ))}
             </ul>
@@ -376,3 +491,4 @@ function Footer() {
     </footer>
   );
 }
+ 
