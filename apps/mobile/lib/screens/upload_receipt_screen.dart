@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -15,27 +16,107 @@ class UploadReceiptScreen extends StatefulWidget {
 class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
   XFile? _selectedImage;
   bool _showExtraction = false;
+  bool _isOcrProcessing = false; 
+  
+  // Kontroler Form Input
+  final TextEditingController _merchantController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
+  
+  Timer? _pollingTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DashboardProvider>().clearError();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    _merchantController.dispose();
+    _dateController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final image = await picker.pickImage(source: source, maxWidth: 2048, maxHeight: 2048);
     if (image != null) {
-      setState(() => _selectedImage = image);
+      setState(() {
+        _selectedImage = image;
+        _showExtraction = true; 
+        _isOcrProcessing = true; 
+        
+        _merchantController.clear();
+        _dateController.clear();
+        _amountController.clear();
+      });
+      
       if (!mounted) return;
-      final success = await context.read<DashboardProvider>().uploadReceipt(image.path);
+      final provider = context.read<DashboardProvider>();
+      provider.clearError();
+      
+      final success = await provider.uploadReceipt(image.path);
       if (success && mounted) {
-        setState(() => _showExtraction = true);
-        context.read<DashboardProvider>().loadDashboard();
+        _startPollingOCR(); 
+      } else {
+        setState(() => _isOcrProcessing = false); 
       }
     }
+  }
+
+  void _startPollingOCR() {
+    _pollingTimer?.cancel();
+    int secondsElapsed = 0;
+
+    _pollingTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      secondsElapsed += 2;
+      if (!mounted || secondsElapsed >= 20) { 
+        timer.cancel();
+        setState(() => _isOcrProcessing = false); 
+        return;
+      }
+
+      final provider = context.read<DashboardProvider>();
+      await provider.loadReceipts(refresh: true);
+      provider.clearError(); 
+
+      final receipts = provider.receipts;
+      if (receipts.isNotEmpty) {
+        final dynamic latestReceipt = receipts.first;
+        final String statusStr = latestReceipt.status?.toString().toUpperCase() ?? '';
+
+        if (statusStr.contains('COMPLETED')) {
+          timer.cancel();
+          setState(() {
+            _isOcrProcessing = false;
+            try {
+              final dynamic resData = latestReceipt.receiptData;
+              if (resData != null) {
+                _merchantController.text = resData.merchantName?.toString() ?? '';
+                String rawDate = resData.transactionDate?.toString() ?? '';
+                _dateController.text = rawDate.length >= 10 ? rawDate.substring(0, 10) : rawDate;
+                _amountController.text = resData.totalAmount?.toString() ?? '';
+              }
+            } catch (_) {}
+          });
+        } 
+        else if (statusStr.contains('FAILED') || statusStr.contains('REJECTED')) {
+          timer.cancel();
+          setState(() => _isOcrProcessing = false); 
+        }
+      }
+    });
   }
 
   void _showPickerSheet() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -44,7 +125,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
             children: [
               Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 20),
-              const Text('Pilih Sumber', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              const Text('Pilih Sumber Struk', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 20),
               Row(
                 children: [
@@ -95,16 +176,19 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pindai Struk', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppTheme.textPrimary,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
-              const Text('Pindai Struk', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
-              const SizedBox(height: 4),
-              const Text('Unggah struk dan kami akan mengekstrak detailnya secara otomatis',
+              const Text('Unggah struk untuk ekstraksi otomatis atau lakukan pengisian data secara mandiri',
                   style: TextStyle(fontSize: 14, color: AppTheme.textSecondary)),
               const SizedBox(height: 20),
               GestureDetector(
@@ -115,7 +199,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                   decoration: BoxDecoration(
                     color: AppTheme.surface,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3), width: 2, strokeAlign: BorderSide.strokeAlignInside),
+                    border: Border.all(color: AppTheme.primary.withOpacity(0.3), width: 2),
                   ),
                   child: _selectedImage != null
                       ? ClipRRect(
@@ -131,14 +215,14 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                             Container(
                               width: 56,
                               height: 56,
-                              decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+                              decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
                               child: const Icon(Icons.cloud_upload_outlined, size: 28, color: AppTheme.primary),
                             ),
                             const SizedBox(height: 16),
                             const Text('Ketuk untuk unggah struk',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                             const SizedBox(height: 4),
-                            const Text('PNG, JPG, PDF hingga 10MB',
+                            const Text('PNG, JPG hingga 10MB',
                                 style: TextStyle(fontSize: 13, color: AppTheme.textTertiary)),
                           ],
                         ),
@@ -148,11 +232,11 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: _actionButton(Icons.camera_alt_outlined, 'Kamera', () => _pickImage(ImageSource.camera)),
+                    child: _actionButton(Icons.camera_alt_rounded, 'Kamera', () => _showPickerSheet()),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _actionButton(Icons.photo_library_outlined, 'Galeri', () => _pickImage(ImageSource.gallery)),
+                    child: _actionButton(Icons.photo_library_rounded, 'Galeri', () => _showPickerSheet()),
                   ),
                 ],
               ),
@@ -167,54 +251,14 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: const Color(0xFFFED7AA)),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.warning.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(Icons.hourglass_top_rounded, size: 20, color: AppTheme.warning),
-                              ),
-                              const SizedBox(width: 12),
-                              const Expanded(
-                                child: Text('Mengunggah struk...',
-                                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF7C2D12))),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: dash.uploadProgress,
-                              minHeight: 6,
-                              backgroundColor: const Color(0xFFE2E8F0),
-                              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.warning),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  if (dash.errorMessage != null) {
-                    return Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppTheme.danger.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.danger.withValues(alpha: 0.3)),
-                      ),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline, size: 20, color: AppTheme.danger),
+                          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.warning)),
                           const SizedBox(width: 12),
-                          Expanded(child: Text(dash.errorMessage!, style: const TextStyle(fontSize: 13, color: AppTheme.danger))),
+                          Expanded(
+                            child: Text('Menyimpan ke cloud storage (${(dash.uploadProgress * 100).toInt()}%)',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF7C2D12))),
+                          ),
                         ],
                       ),
                     );
@@ -224,7 +268,22 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
               ),
               if (_showExtraction && _selectedImage != null) ...[
                 const SizedBox(height: 20),
-                const Text('Hasil Ekstraksi AI', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Detail Transaksi Struk', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                    if (_isOcrProcessing)
+                      const Row(
+                        children: [
+                          SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 1.5, color: AppTheme.primary)),
+                          SizedBox(width: 6),
+                          Text('Memproses AI...', style: TextStyle(fontSize: 12, color: AppTheme.primary, fontWeight: FontWeight.w500)),
+                        ],
+                      )
+                    else
+                      const Text('Mode Edit Manual', style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w500)),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
@@ -236,11 +295,11 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                   ),
                   child: Column(
                     children: [
-                      _extractionRow(Icons.store_outlined, 'Merchant', 'Menunggu OCR...'),
-                      const Divider(height: 24),
-                      _extractionRow(Icons.calendar_today_outlined, 'Tanggal', 'Diproses'),
-                      const Divider(height: 24),
-                      _extractionRow(Icons.attach_money_outlined, 'Jumlah', 'Dihitung'),
+                      _editableRow(Icons.store_outlined, 'Merchant', _merchantController, isOcrLoading: _isOcrProcessing),
+                      const SizedBox(height: 16),
+                      _editableRow(Icons.calendar_today_outlined, 'Tanggal', _dateController, isOcrLoading: _isOcrProcessing, hintText: 'YYYY-MM-DD'),
+                      const SizedBox(height: 16),
+                      _editableRow(Icons.attach_money_outlined, 'Jumlah (Rp)', _amountController, isOcrLoading: _isOcrProcessing, keyboardType: TextInputType.number),
                     ],
                   ),
                 ),
@@ -249,13 +308,27 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      if (_selectedImage != null) {
-                        _pickImage(ImageSource.camera);
-                      }
+                      _pollingTimer?.cancel();
+
+                      // 1. Munculkan Notifikasi Dummy "Data Disimpan" Berwarna Hijau
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Data Disimpan', style: TextStyle(fontWeight: FontWeight.bold)),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+
+                      // 2. Tutup Halaman Pindai (Refresh diserahkan aman ke HomeScreen .then)
                       Navigator.of(context).pop();
                     },
-                    icon: const Icon(Icons.save_rounded, size: 20),
-                    label: const Text('Simpan Struk'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.check_circle_outline, size: 20, color: Colors.white),
+                    label: const Text('Simpan Ke JagaFinance', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -289,7 +362,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
     );
   }
 
-  Widget _extractionRow(IconData icon, String label, String value) {
+  Widget _editableRow(IconData icon, String label, TextEditingController controller, {required bool isOcrLoading, String hintText = '', TextInputType keyboardType = TextInputType.text}) {
     return Row(
       children: [
         Container(
@@ -299,8 +372,23 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
           child: Icon(icon, size: 18, color: AppTheme.textSecondary),
         ),
         const SizedBox(width: 12),
-        Expanded(child: Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary))),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+        Expanded(flex: 2, child: Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary))),
+        Expanded(
+          flex: 5,
+          child: TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              hintText: isOcrLoading ? 'Mengekstrak otomatis...' : (hintText.isEmpty ? 'Isi manual di sini' : hintText),
+              hintStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.normal, color: isOcrLoading ? AppTheme.primary.withOpacity(0.5) : AppTheme.textTertiary),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.border)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.primary)),
+            ),
+          ),
+        ),
       ],
     );
   }

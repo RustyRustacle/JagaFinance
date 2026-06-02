@@ -150,6 +150,17 @@ expenseRouter.get("/", async (req: AuthRequest, res) => {
     where.tags = { hasSome: qTags.split(",") };
   }
 
+  // ====================================================================
+  // BARIS PENYELAMAT: Menerjemahkan snake_case mobile ke camelCase Prisma
+  // ====================================================================
+  const sortMapping: Record<string, string> = {
+    expense_date: "expenseDate",
+    created_at: "createdAt",
+    updated_at: "updatedAt",
+  };
+  const sortField = sortMapping[query.sort] || query.sort;
+  // ====================================================================
+
   const [expenses, total] = await Promise.all([
     prisma.expense.findMany({
       where,
@@ -163,7 +174,7 @@ expenseRouter.get("/", async (req: AuthRequest, res) => {
           },
         },
       },
-      orderBy: { [query.sort]: query.order },
+      orderBy: { [sortField]: query.order }, // <--- Menggunakan variabel sortField yang baru
       skip: (query.page - 1) * query.limit,
       take: query.limit,
     }),
@@ -251,18 +262,17 @@ expenseRouter.delete("/:id", adminOnly, async (req: AuthRequest, res) => {
     },
   });
 
-    res.json({ success: true });
+  res.json({ success: true });
 
-    createAuditLog({
-      tenantId: req.user!.tenantId,
-      userId: req.user!.id,
-      action: "DELETE",
-      entityType: "Expense",
-      entityId: req.params.id,
-      req,
-    });
-  }
-);
+  createAuditLog({
+    tenantId: req.user!.tenantId,
+    userId: req.user!.id,
+    action: "DELETE",
+    entityType: "Expense",
+    entityId: req.params.id,
+    req,
+  });
+});
 
 expenseRouter.patch(
   "/bulk",

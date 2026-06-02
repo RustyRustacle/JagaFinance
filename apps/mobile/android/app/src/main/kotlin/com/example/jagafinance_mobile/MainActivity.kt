@@ -1,4 +1,4 @@
-package com.example.jagafinance_mobile
+package com.jagafinance.mobile
 
 import io.flutter.embedding.android.FlutterActivity
 
