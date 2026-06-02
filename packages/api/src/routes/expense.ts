@@ -4,6 +4,7 @@ import { prisma, Prisma } from "@jagafinance/db";
 import { authMiddleware, AuthRequest, financeOrAdmin, adminOnly } from "../middleware/auth";
 import { AppError } from "../middleware/errorHandler";
 import { ExpenseStatus } from "@jagafinance/db";
+import { validate } from "../middleware/validate";
 import { enqueueBudgetAlert } from "../lib/queue";
 import { createAuditLog } from "../lib/audit";
 

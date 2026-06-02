@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@jagafinance/db";
 import { authMiddleware, AuthRequest, financeOrAdmin } from "../middleware/auth";
 import { AppError } from "../middleware/errorHandler";
+import { validate } from "../middleware/validate";
 import { createAuditLog } from "../lib/audit";
 
 export const budgetRouter = Router();
