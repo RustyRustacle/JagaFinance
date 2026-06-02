@@ -111,7 +111,7 @@ async function processOCR(receiptId: string) {
         totalAmount: ocrResult.totalAmount,
         currency: ocrResult.currency,
         paymentMethod: ocrResult.paymentMethod,
-        lineItems: ocrResult.lineItems,
+        lineItems: JSON.parse(JSON.stringify(ocrResult.lineItems)),
       },
     });
 

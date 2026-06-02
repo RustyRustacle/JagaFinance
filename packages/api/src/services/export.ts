@@ -84,7 +84,7 @@ export class ExportService {
       to: "J1",
     };
 
-    return await workbook.xlsx.writeBuffer();
+    return Buffer.from(await workbook.xlsx.writeBuffer());
   }
 
   async exportExpensesCSV(
@@ -136,7 +136,7 @@ export class ExportService {
           },
         });
 
-        doc.on("data", (chunk) => chunks.push(chunk));
+        doc.on("data", (chunk: Buffer) => chunks.push(chunk));
         doc.on("end", () => resolve(Buffer.concat(chunks)));
 
       doc.fontSize(20).font("Helvetica-Bold").text("Expense Report", {
