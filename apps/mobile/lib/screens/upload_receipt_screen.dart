@@ -199,7 +199,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                   decoration: BoxDecoration(
                     color: AppTheme.surface,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppTheme.primary.withOpacity(0.3), width: 2),
+                    border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3), width: 2),
                   ),
                   child: _selectedImage != null
                       ? ClipRRect(
@@ -215,7 +215,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                             Container(
                               width: 56,
                               height: 56,
-                              decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                              decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
                               child: const Icon(Icons.cloud_upload_outlined, size: 28, color: AppTheme.primary),
                             ),
                             const SizedBox(height: 16),
@@ -383,7 +383,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               hintText: isOcrLoading ? 'Mengekstrak otomatis...' : (hintText.isEmpty ? 'Isi manual di sini' : hintText),
-              hintStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.normal, color: isOcrLoading ? AppTheme.primary.withOpacity(0.5) : AppTheme.textTertiary),
+              hintStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.normal, color: isOcrLoading ? AppTheme.primary.withValues(alpha: 0.5) : AppTheme.textTertiary),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.border)),
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.primary)),
             ),

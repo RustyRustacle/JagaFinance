@@ -173,7 +173,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
         color: AppTheme.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: exceeded ? AppTheme.danger.withOpacity(0.3) : warning ? AppTheme.warning.withOpacity(0.3) : AppTheme.border,
+          color: exceeded ? AppTheme.danger.withValues(alpha: 0.3) : warning ? AppTheme.warning.withValues(alpha: 0.3) : AppTheme.border,
         ),
       ),
       child: Column(
@@ -199,7 +199,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: exceeded ? AppTheme.danger.withOpacity(0.1) : warning ? AppTheme.warning.withOpacity(0.1) : AppTheme.success.withOpacity(0.1),
+                  color: exceeded ? AppTheme.danger.withValues(alpha: 0.1) : warning ? AppTheme.warning.withValues(alpha: 0.1) : AppTheme.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -238,7 +238,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
               padding: const EdgeInsets.only(top: 8),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: AppTheme.danger.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: AppTheme.danger.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -254,7 +254,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
               padding: const EdgeInsets.only(top: 8),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: AppTheme.warning.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: AppTheme.warning.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -354,7 +354,7 @@ class _CreateBudgetSheetState extends State<_CreateBudgetSheet> {
           const Text('Kategori', style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _selectedCategoryId, // FIXED: Mengganti initialValue menjadi value agar bisa dicompile
+            initialValue: _selectedCategoryId, // FIXED: Mengganti initialValue menjadi value agar bisa dicompile
             decoration: InputDecoration(
               hintText: 'Pilih kategori',
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
