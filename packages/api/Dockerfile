@@ -1,7 +1,8 @@
 FROM node:20-alpine AS base
 
-# Install pnpm
+# Install pnpm and OpenSSL (required for Prisma on Alpine)
 RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN apk add --no-cache openssl
 
 FROM base AS deps
 WORKDIR /app
@@ -14,6 +15,8 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Re-link binaries (COPY breaks pnpm symlinks)
+RUN pnpm install --frozen-lockfile 2>/dev/null || true
 RUN pnpm --filter=@jagafinance/db generate && \
     pnpm --filter=@jagafinance/api build
 
