@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "B2B SaaS platform for digitizing physical receipts into financial reports instantly",
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/favicon.png",
   },
 };
 
