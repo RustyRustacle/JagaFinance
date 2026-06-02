@@ -120,11 +120,23 @@ exportRouter.get("/:id/download", async (req: AuthRequest, res) => {
   res.send(buffer);
 });
 
-exportRouter.post("/quick-export", authMiddleware, async (req: AuthRequest, res) => {
-  const { format = "CSV", export_type = "expenses", filters = {} } = req.body as Record<string, unknown>;
+const quickExportSchema = z.object({
+  format: z.enum(["CSV", "XLSX", "PDF"]).optional(),
+  export_type: z.enum(["expenses", "receipts", "budget_report", "tax_summary"]).optional(),
+  filters: z.object({
+    date_from: z.string().optional(),
+    date_to: z.string().optional(),
+    category_id: z.string().uuid().optional(),
+    status: z.string().optional(),
+    accounting_format: z.enum(["standard", "jurnal", "accurate"]).optional(),
+  }).optional(),
+});
+
+exportRouter.post("/quick-export", validate(quickExportSchema), async (req: AuthRequest, res) => {
+  const { format = "CSV", export_type = "expenses", filters = {} } = req.body;
 
   const exportSvc = new ExportService();
-  const typedFilters = filters as Record<string, string>;
+  const typedFilters = (filters || {}) as Record<string, string>;
 
   let content: Buffer | string;
   let contentType: string;
@@ -156,7 +168,17 @@ exportRouter.post("/quick-export", authMiddleware, async (req: AuthRequest, res)
     throw new AppError(400, "NOT_IMPLEMENTED", "Export type not supported");
   }
 
-  const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content as string);
+  const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content);
+
+  createAuditLog({
+    tenantId: req.user!.tenantId,
+    userId: req.user!.id,
+    action: "EXPORT",
+    entityType: "ExportJob",
+    entityId: "quick-" + export_type,
+    changes: { format, export_type, filters },
+    req,
+  });
 
   res.setHeader("Content-Type", contentType);
   res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);

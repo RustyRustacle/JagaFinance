@@ -122,22 +122,22 @@ export class ExportService {
     tenantId: string,
     filters: ExportFilters
   ): Promise<Buffer> {
-    return new Promise(async (resolve) => {
-      const expenses = await this.getExpenses(tenantId, filters);
+    return new Promise<Buffer>(async (resolve, reject) => {
+      try {
+        const expenses = await this.getExpenses(tenantId, filters);
+        const chunks: Buffer[] = [];
+        const doc = new PDFDocument({
+          size: "A4",
+          margin: 50,
+          info: {
+            Title: "Expense Report - JagaFinance",
+            Author: "JagaFinance",
+            CreationDate: new Date(),
+          },
+        });
 
-      const chunks: Buffer[] = [];
-      const doc = new PDFDocument({
-        size: "A4",
-        margin: 50,
-        info: {
-          Title: "Expense Report - JagaFinance",
-          Author: "JagaFinance",
-          CreationDate: new Date(),
-        },
-      });
-
-      doc.on("data", (chunk) => chunks.push(chunk));
-      doc.on("end", () => resolve(Buffer.concat(chunks)));
+        doc.on("data", (chunk) => chunks.push(chunk));
+        doc.on("end", () => resolve(Buffer.concat(chunks)));
 
       doc.fontSize(20).font("Helvetica-Bold").text("Expense Report", {
         align: "center",
@@ -196,7 +196,10 @@ export class ExportService {
       doc.font("Helvetica-Bold").fontSize(11);
       doc.text(`Total: Rp ${totalAmount.toLocaleString("id-ID")}`, startX, y);
 
-      doc.end();
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 

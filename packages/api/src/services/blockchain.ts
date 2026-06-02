@@ -7,8 +7,9 @@ const CHAIN_ID = process.env.BLOCKCHAIN_CHAIN_ID || "11155111";
 
 const RECEIPT_VERIFICATION_ABI = [
   "function verifyReceipt(bytes32 _receiptHash, string calldata _tenantId) external",
-  "function getReceipt(bytes32 _receiptHash) external view returns (tuple(bytes32 receiptHash, string tenantId, uint256 timestamp, bool exists))",
-  "function getTenantReceipts(string calldata _tenantId) external view returns (bytes32[])",
+  "function getReceipt(bytes32 _receiptHash) external view returns (tuple(string tenantId, uint256 timestamp, bool exists))",
+  "function getTenantReceipts(string calldata _tenantId, uint256 offset, uint256 limit) external view returns (bytes32[])",
+  "function getTenantReceiptCount(string calldata _tenantId) external view returns (uint256)",
   "event ReceiptVerified(bytes32 indexed receiptHash, string indexed tenantId, uint256 timestamp)",
 ];
 
