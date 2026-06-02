@@ -30,6 +30,7 @@
     "pdfkit": "^0.18.0",
     "resend": "^6.12.3",
     "tesseract.js": "^7.0.0",
+    "ws": "^8.21.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
