@@ -310,7 +310,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                     onPressed: () {
                       _pollingTimer?.cancel();
 
-                      // 1. Munculkan Notifikasi Dummy "Data Disimpan" Berwarna Hijau
+                      // Untuk Munculkan Notifikasi Dummy 
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Data Disimpan', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -319,7 +319,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                         ),
                       );
 
-                      // 2. Tutup Halaman Pindai (Refresh diserahkan aman ke HomeScreen .then)
+                      
                       Navigator.of(context).pop();
                     },
                     style: ElevatedButton.styleFrom(
