@@ -66,7 +66,7 @@ export class OCRService {
     });
 
     const fullText = result.fullTextAnnotation?.text || "";
-    const confidence = result.fullTextAnnotation?.confidence ?? 0;
+    const confidence = (result.fullTextAnnotation as { confidence?: number })?.confidence ?? 0;
 
     return this.parseText(fullText, confidence, "google_vision");
   }
