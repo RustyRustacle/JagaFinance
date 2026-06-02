@@ -21,22 +21,34 @@ VALUES (
 -- STORAGE RLS POLICIES
 -- ======================
 
--- Allow authenticated users to upload receipts
-CREATE POLICY "receipts_upload_auth" ON storage.objects
+-- Allow users to upload receipts only to their own tenant folder
+CREATE POLICY "receipts_upload_tenant" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'receipts'
     AND auth.role() = 'authenticated'
+    AND (storage.foldername(name))[1] IN (
+      SELECT tm.tenant_id::TEXT
+      FROM public.tenant_members tm
+      WHERE tm.user_id = auth.uid()
+        AND tm.status = 'ACCEPTED'
+    )
   );
 
--- Allow users to view receipts from their tenant
-CREATE POLICY "receipts_view_auth" ON storage.objects
+-- Allow users to view receipts only from their own tenant(s)
+CREATE POLICY "receipts_view_tenant" ON storage.objects
   FOR SELECT USING (
     bucket_id = 'receipts'
     AND auth.role() = 'authenticated'
+    AND (storage.foldername(name))[1] IN (
+      SELECT tm.tenant_id::TEXT
+      FROM public.tenant_members tm
+      WHERE tm.user_id = auth.uid()
+        AND tm.status = 'ACCEPTED'
+    )
   );
 
--- Allow users to delete their own receipts
-CREATE POLICY "receipts_delete_auth" ON storage.objects
+-- Allow ADMIN users to delete receipts from their own tenant
+CREATE POLICY "receipts_delete_admin" ON storage.objects
   FOR DELETE USING (
     bucket_id = 'receipts'
     AND auth.role() = 'authenticated'
