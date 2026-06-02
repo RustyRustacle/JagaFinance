@@ -16,7 +16,7 @@ jagafinance/
 ├── packages/
 │   ├── api/                    # Express 4 REST API (OCR, queues, export, admin)
 │   └── db/                     # Prisma 5 schema + client (PostgreSQL 16)
-├── packages/blockchain/        # Hardhat + Solidity (Base Sepolia)
+├── packages/blockchain/        # Hardhat + Solidity (Sepolia Ethereum)
 ├── docker-compose.yml          # Local Postgres 16 + Redis 7
 └── turbo.json                  # Turborepo pipeline config
 ```
@@ -46,7 +46,7 @@ jagafinance/
 | **Auth** | Supabase Auth + JWT | SSR session + Bearer token |
 | **OCR** | Tesseract.js + Google Cloud Vision | Local + Cloud OCR pipeline |
 | **Email** | Resend | Transactional notifications |
-| **Blockchain** | Hardhat + Solidity | Receipt hash verification on Base Sepolia |
+| **Blockchain** | Hardhat + Solidity | Receipt hash verification on Sepolia Ethereum |
 | **Styling** | Tailwind CSS + CVA | Utility-first design system |
 | **Containerization** | Docker Compose | Local development infrastructure |
 
@@ -200,7 +200,7 @@ All endpoints return a standard envelope:
 | `RESEND_API_KEY` | ⚠️ | Email delivery (invites, alerts) |
 | `NEXT_PUBLIC_API_URL` | ✅ | API base URL for frontend |
 | `BLOCKCHAIN_CONTRACT_ADDRESS` | ⚠️ | Smart contract address (optional) |
-| `BLOCKCHAIN_RPC_URL` | ⚠️ | Base Sepolia RPC endpoint |
+| `BLOCKCHAIN_RPC_URL` | ⚠️ | Sepolia Ethereum RPC endpoint |
 
 ---
 
@@ -231,7 +231,7 @@ All endpoints return a standard envelope:
 - **Tax-Compliant Reporting** — PPN/PPh categorization, tax-deductible flagging, and export-ready financial reports in PDF and Excel formats.
 - **Audit Trail** — All mutations logged with `AuditLog` including actor, action, entity, changes diff, and IP address.
 - **Admin Dashboard** — Platform-wide overview with user/tenant/receipt management, search and pagination.
-- **Blockchain Verification** — Optional receipt hash anchoring on Base Sepolia for tamper-proof audit trail.
+- **Blockchain Verification** — Optional receipt hash anchoring on Sepolia Ethereum for tamper-proof audit trail.
 
 ---
 
