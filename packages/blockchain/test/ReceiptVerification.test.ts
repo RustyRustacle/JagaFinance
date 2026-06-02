@@ -25,7 +25,6 @@ describe("ReceiptVerification", function () {
     const record = await contract.getReceipt(receiptHash);
     expect(record.exists).to.be.true;
     expect(record.tenantId).to.equal(tenantId);
-    expect(record.receiptHash).to.equal(receiptHash);
   });
 
   it("should increment receiptCount on verification", async function () {
@@ -48,14 +47,15 @@ describe("ReceiptVerification", function () {
     ).to.be.revertedWith("Already exists");
   });
 
-  it("should return tenant receipts", async function () {
+  it("should return tenant receipts with pagination", async function () {
     const hash1 = ethers.keccak256(ethers.toUtf8Bytes("r1"));
     const hash2 = ethers.keccak256(ethers.toUtf8Bytes("r2"));
 
     await contract.verifyReceipt(hash1, "tenant-a");
     await contract.verifyReceipt(hash2, "tenant-a");
 
-    const hashes = await contract.getTenantReceipts("tenant-a");
+    const hashes = await contract.getTenantReceipts("tenant-a", 0, 10);
     expect(hashes.length).to.equal(2);
+    expect(await contract.getTenantReceiptCount("tenant-a")).to.equal(2);
   });
 });

@@ -6,7 +6,6 @@ contract ReceiptVerification {
     uint256 public receiptCount;
 
     struct ReceiptRecord {
-        bytes32 receiptHash;
         string tenantId;
         uint256 timestamp;
         bool exists;
@@ -33,12 +32,11 @@ contract ReceiptVerification {
     function verifyReceipt(
         bytes32 _receiptHash,
         string calldata _tenantId
-    ) external {
+    ) external onlyOwner {
         require(_receiptHash != bytes32(0), "Invalid hash");
         require(!records[_receiptHash].exists, "Already exists");
 
         records[_receiptHash] = ReceiptRecord({
-            receiptHash: _receiptHash,
             tenantId: _tenantId,
             timestamp: block.timestamp,
             exists: true
@@ -57,9 +55,25 @@ contract ReceiptVerification {
     }
 
     function getTenantReceipts(
-        string calldata _tenantId
+        string calldata _tenantId,
+        uint256 offset,
+        uint256 limit
     ) external view returns (bytes32[] memory) {
-        return tenantRecords[_tenantId];
+        bytes32[] storage all = tenantRecords[_tenantId];
+        uint256 end = offset + limit;
+        if (end > all.length) end = all.length;
+        if (offset >= all.length) return new bytes32[](0);
+        bytes32[] memory result = new bytes32[](end - offset);
+        for (uint256 i = offset; i < end; i++) {
+            result[i - offset] = all[i];
+        }
+        return result;
+    }
+
+    function getTenantReceiptCount(
+        string calldata _tenantId
+    ) external view returns (uint256) {
+        return tenantRecords[_tenantId].length;
     }
 
     function getReceiptCount() external view returns (uint256) {
