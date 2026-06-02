@@ -17,7 +17,7 @@
     "docker:down": "docker-compose down",
     "docker:reset": "docker-compose down -v && docker-compose up -d",
     "blockchain:compile": "pnpm --filter=@jagafinance/blockchain compile",
-    "blockchain:deploy": "pnpm --filter=@jagafinance/blockchain deploy:base-sepolia"
+    "blockchain:deploy": "pnpm --filter=@jagafinance/blockchain deploy:sepolia"
   },
   "devDependencies": {
     "turbo": "^2.0.0"
