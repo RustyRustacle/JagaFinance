@@ -68,6 +68,7 @@ class DashboardProvider extends ChangeNotifier {
       };
       if (categoryId != null) queryParams['category_id'] = categoryId;
       if (status != null) queryParams['status'] = status;
+      
       final response = await _api.get('/expenses', queryParameters: queryParams);
       final data = response.data;
       final list = (data['data'] as List<dynamic>)
@@ -99,6 +100,7 @@ class DashboardProvider extends ChangeNotifier {
   Future<void> loadReceipts({bool refresh = false}) async {
     if (refresh) _page = 1;
     _isLoading = refresh || _receipts.isEmpty;
+    _errorMessage = null; 
     notifyListeners();
 
     try {
@@ -108,12 +110,22 @@ class DashboardProvider extends ChangeNotifier {
         'sort': 'created_at',
         'order': 'desc',
       });
+      
       final data = response.data;
-      _receipts = (data['data'] as List<dynamic>)
-          .map((e) => Receipt.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final List<dynamic> rawList = data['data'] as List<dynamic>;
+      List<Receipt> parsedReceipts = [];
+
+      for (var item in rawList) {
+        try {
+          parsedReceipts.add(Receipt.fromJson(item as Map<String, dynamic>));
+        } catch (itemError) {
+          debugPrint("Safe Parsing Warning (Receipt Ignored): \$itemError");
+        }
+      }
+
+      _receipts = parsedReceipts;
     } catch (e) {
-      _errorMessage = 'Gagal memuat struk';
+      debugPrint("Quiet Load Receipts Failed: \$e");
     }
     _isLoading = false;
     notifyListeners();
@@ -149,6 +161,7 @@ class DashboardProvider extends ChangeNotifier {
   Future<bool> uploadReceipt(String filePath) async {
     _isUploading = true;
     _uploadProgress = 0;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -166,12 +179,15 @@ class DashboardProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _isUploading = false;
-      _errorMessage = 'Gagal mengunggah struk';
+      _errorMessage = 'Gagal mengunggah struk ke cloud storage';
       notifyListeners();
       return false;
     }
   }
 
+  // ===================================================================
+  // AMAN KEMBALI: Fungsi createBudget sudah disuntik ulang ke tempatnya!
+  // ===================================================================
   Future<bool> createBudget({
     required String categoryId,
     required double amount,

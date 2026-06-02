@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -7,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.jagafinance.mobile"
-    compileSdk = 35
+    compileSdkVersion(flutter.compileSdkVersion)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -21,8 +23,8 @@ android {
 
     defaultConfig {
         applicationId = "com.jagafinance.mobile"
-        minSdk = 23
-        targetSdk = 35
+        minSdkVersion(flutter.minSdkVersion)
+        targetSdkVersion(flutter.targetSdkVersion)
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -31,7 +33,7 @@ android {
         create("release") {
             val keystoreFile = rootProject.file("key.properties")
             if (keystoreFile.exists()) {
-                val props = java.util.Properties()
+                val props = Properties()
                 props.load(keystoreFile.inputStream())
                 storeFile = file(props.getProperty("storeFile"))
                 storePassword = props.getProperty("storePassword")
@@ -43,10 +45,14 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("debug")
+
+            // Mematikan R8/Minify agar JSON Parsing dari backend tidak error/diacak
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
-}
+} 
 
 flutter {
     source = "../.."

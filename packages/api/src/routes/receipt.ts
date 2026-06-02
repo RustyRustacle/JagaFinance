@@ -132,6 +132,16 @@ receiptRouter.get("/", async (req: AuthRequest, res) => {
     if (qDateTo) where.createdAt.lte = new Date(qDateTo);
   }
 
+  // ====================================================================
+  // BARIS PENYELAMAT: Menerjemahkan created_at ke camelCase Prisma
+  // ====================================================================
+  const sortMapping: Record<string, string> = {
+    created_at: "createdAt",
+    updated_at: "updatedAt",
+  };
+  const sortField = sortMapping[query.sort] || query.sort;
+  // ====================================================================
+
   const [receipts, total] = await Promise.all([
     prisma.receipt.findMany({
       where,
@@ -145,7 +155,7 @@ receiptRouter.get("/", async (req: AuthRequest, res) => {
           },
         },
       },
-      orderBy: { [query.sort]: query.order },
+      orderBy: { [sortField]: query.order }, // <--- MEMAKAI sortField YANG SUDAH DI-FIX
       skip: (query.page - 1) * query.limit,
       take: query.limit,
     }),

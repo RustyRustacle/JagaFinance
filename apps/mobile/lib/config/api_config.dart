@@ -1,8 +1,6 @@
 class ApiConfig {
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3001/api/v1',
-  );
+  // Kita bypass sementara dari Environment, langsung tembak IP asli Laptop Anda
+  static const String baseUrl = 'http://192.168.18.164:3001/api/v1';
 
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 30);
