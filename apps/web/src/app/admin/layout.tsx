@@ -14,10 +14,12 @@ const navItems = [
 ];
 
 function getSupabase() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    throw new Error("Supabase URL and Anon Key must be configured");
+  }
+  return createBrowserClient(url, key);
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -32,6 +34,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       } else {
         setChecking(false);
       }
+    }).catch(() => {
+      router.replace("/admin/login");
     });
   }, [router]);
 
