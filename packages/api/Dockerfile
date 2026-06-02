@@ -15,4 +15,4 @@ RUN pnpm --filter=@jagafinance/db generate
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/v1/health || exit 1
-CMD ["pnpm", "exec", "tsx", "packages/api/src/index.ts"]
+CMD ["pnpm", "--filter=@jagafinance/api", "exec", "tsx", "src/index.ts"]
