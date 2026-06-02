@@ -105,9 +105,13 @@ adminRouter.get("/users", async (_req: AuthRequest, res) => {
 
   let userEmails: Record<string, string> = {};
   try {
-    const { data: supabaseUsers } = await supabase.auth.admin.listUsers();
-    if (supabaseUsers?.users) {
-      userEmails = Object.fromEntries(supabaseUsers.users.map((u) => [u.id, u.email ?? ""]));
+    const emailResults = await Promise.allSettled(
+      userIds.map((id) => supabase.auth.admin.getUserById(id).then((r) => ({ id, email: r.data?.user?.email ?? "" })))
+    );
+    for (const result of emailResults) {
+      if (result.status === "fulfilled" && result.value.email) {
+        userEmails[result.value.id] = result.value.email;
+      }
     }
   } catch {}
 

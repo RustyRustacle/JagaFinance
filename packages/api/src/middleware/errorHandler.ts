@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import { Prisma } from "@jagafinance/db";
+import multer from "multer";
 
 export class AppError extends Error {
   public statusCode: number;
@@ -48,6 +49,21 @@ export function errorHandler(
           field: e.path.join("."),
           message: e.message,
         })),
+      },
+    });
+  }
+
+  if (err instanceof multer.MulterError) {
+    const messages: Record<string, string> = {
+      LIMIT_FILE_SIZE: "File terlalu besar. Maksimal 10MB",
+      LIMIT_FILE_COUNT: "Terlalu banyak file",
+      LIMIT_UNEXPECTED_FILE: "Field file tidak sesuai",
+    };
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: "UPLOAD_ERROR",
+        message: messages[err.code] || err.message,
       },
     });
   }

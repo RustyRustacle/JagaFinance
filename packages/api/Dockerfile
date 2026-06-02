@@ -14,7 +14,7 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm --filter=@jagafinance/db build && \
+RUN pnpm --filter=@jagafinance/db generate && \
     pnpm --filter=@jagafinance/api build
 
 FROM base AS runner

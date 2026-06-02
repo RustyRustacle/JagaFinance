@@ -30,8 +30,8 @@ app.use(
   })
 );
 app.use(morgan("dev"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
