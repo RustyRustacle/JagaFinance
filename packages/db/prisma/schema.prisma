@@ -90,6 +90,7 @@ model Tenant {
   timezone         String           @default("Asia/Jakarta") @db.VarChar(50)
   language         String           @default("id") @db.VarChar(5)
   plan             String           @default("FREE") @db.VarChar(20)
+  isActive         Boolean          @default(true) @map("is_active")
   settings         Json             @default("{}")
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
@@ -151,6 +152,7 @@ model TenantMember {
   inviter    User?      @relation("UserInvitedBy", fields: [invitedBy], references: [id])
 
   @@unique([tenantId, userId])
+  @@index([invitedBy])
   @@map("tenant_members")
 }
 
@@ -169,6 +171,8 @@ model Invite {
   tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   creator    User?        @relation("UserCreatedInvites", fields: [createdBy], references: [id])
 
+  @@index([tenantId])
+  @@index([email])
   @@map("invites")
 }
 
@@ -243,6 +247,7 @@ model ReceiptData {
   verifier        User?      @relation("UserVerifiedReceipts", fields: [verifiedBy], references: [id])
 
   @@index([receiptId])
+  @@index([verifiedBy])
   @@map("receipt_data")
 }
 
@@ -364,6 +369,7 @@ model BudgetAlert {
   budget         Budget       @relation(fields: [budgetId], references: [id], onDelete: Cascade)
 
   @@index([budgetId])
+  @@index([tenantId])
   @@map("budget_alerts")
 }
 
@@ -428,6 +434,8 @@ model WebhookDelivery {
 
   webhook      Webhook      @relation(fields: [webhookId], references: [id], onDelete: Cascade)
 
+  @@index([webhookId])
+  @@index([status])
   @@map("webhook_deliveries")
 }
 
