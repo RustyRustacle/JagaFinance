@@ -18,7 +18,7 @@ async function refreshToken(): Promise<string | null> {
     if (!res.ok) {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      window.location.href = "/login";
+      window.location.href = "/admin/login";
       return null;
     }
 
@@ -32,7 +32,7 @@ async function refreshToken(): Promise<string | null> {
   } catch {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
-    window.location.href = "/login";
+    window.location.href = "/admin/login";
     return null;
   }
 }
@@ -63,7 +63,13 @@ async function request(endpoint: string, options: FetchOptions = {}): Promise<{ 
         : undefined,
   };
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  fetchOptions.signal = controller.signal;
+
   let res = await fetch(`${API_URL}${endpoint}`, fetchOptions);
+
+  clearTimeout(timeout);
 
   if (res.status === 401 && !options.headers?.Authorization?.startsWith("Bearer ")) {
     if (!isRefreshing) {

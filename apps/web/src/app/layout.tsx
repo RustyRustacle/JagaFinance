@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -8,10 +8,13 @@ export const metadata: Metadata = {
   title: "JagaFinance - Receipt & Expense Intelligence",
   description: "B2B SaaS platform for digitizing physical receipts into financial reports instantly",
   manifest: "/manifest.json",
-  themeColor: "#3B82F6",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/favicon.svg",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#3B82F6",
 };
 
 export default function RootLayout({
