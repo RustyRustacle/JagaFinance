@@ -23,9 +23,9 @@ async function main() {
 
   console.log("\nAdd these to your .env:");
   console.log(`BLOCKCHAIN_CONTRACT_ADDRESS="${address}"`);
-  console.log(`BLOCKCHAIN_RPC_URL="https://sepolia.base.org"`);
+  console.log(`BLOCKCHAIN_RPC_URL="https://ethereum-sepolia.publicnode.com"`);
   console.log(`BLOCKCHAIN_PRIVATE_KEY="<your-api-wallet-private-key>"`);
-  console.log(`BLOCKCHAIN_CHAIN_ID="84532"`);
+  console.log(`BLOCKCHAIN_CHAIN_ID="11155111"`);
 }
 
 main().catch((error) => {

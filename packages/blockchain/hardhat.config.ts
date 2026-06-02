@@ -12,15 +12,15 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    baseSepolia: {
-      url: "https://sepolia.base.org",
-      chainId: 84532,
+    sepolia: {
+      url: "https://ethereum-sepolia.publicnode.com",
+      chainId: 11155111,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
   },
   etherscan: {
     apiKey: {
-      baseSepolia: process.env.BASESCAN_API_KEY || "",
+      sepolia: process.env.ETHERSCAN_API_KEY || "",
     },
   },
 };

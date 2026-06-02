@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "compile": "hardhat compile",
-    "deploy:base-sepolia": "hardhat run scripts/deploy.ts --network baseSepolia",
-    "verify:base-sepolia": "echo 'Usage: pnpm verify:base-sepolia <DEPLOYED_ADDRESS>' && hardhat verify --network baseSepolia",
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
+    "verify:sepolia": "echo 'Usage: pnpm verify:sepolia <DEPLOYED_ADDRESS>' && hardhat verify --network sepolia",
     "test": "hardhat test",
     "typecheck": "tsc --noEmit"
   },
