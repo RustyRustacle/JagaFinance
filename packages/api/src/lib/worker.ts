@@ -69,62 +69,78 @@ function setupWorkerEvents(worker: Worker, name: string) {
 async function processOCR(receiptId: string) {
   console.log(`[OCR] Processing receipt: ${receiptId}`);
 
-  await prisma.receipt.update({
-    where: { id: receiptId },
-    data: { status: "PROCESSING" },
-  });
+  try {
+    await prisma.receipt.update({
+      where: { id: receiptId },
+      data: { status: "PROCESSING" },
+    });
 
-  const receipt = await prisma.receipt.findUnique({
-    where: { id: receiptId },
-  });
+    const receipt = await prisma.receipt.findUnique({
+      where: { id: receiptId },
+    });
 
-  if (!receipt) {
-    throw new Error(`Receipt ${receiptId} not found`);
+    if (!receipt) {
+      throw new Error(`Receipt ${receiptId} not found`);
+    }
+
+    const fileName = receipt.fileUrl.split("/").slice(-2).join("/");
+
+    const { data: fileData, error } = await supabase.storage
+      .from("receipts")
+      .download(fileName);
+
+    if (error || !fileData) {
+      throw new Error(`Failed to download receipt file: ${error.message}`);
+    }
+
+    const buffer = Buffer.from(await fileData.arrayBuffer());
+    const ocrResult = await ocrService.processImage(buffer);
+
+    await prisma.receiptData.create({
+      data: {
+        receiptId,
+        merchantName: ocrResult.merchantName,
+        merchantAddress: ocrResult.merchantAddress,
+        merchantPhone: ocrResult.merchantPhone,
+        receiptNumber: ocrResult.receiptNumber,
+        transactionDate: ocrResult.transactionDate,
+        subtotal: ocrResult.subtotal,
+        taxAmount: ocrResult.taxAmount,
+        taxRate: ocrResult.taxRate,
+        discountAmount: ocrResult.discountAmount,
+        totalAmount: ocrResult.totalAmount,
+        currency: ocrResult.currency,
+        paymentMethod: ocrResult.paymentMethod,
+        lineItems: ocrResult.lineItems,
+      },
+    });
+
+    await prisma.receipt.update({
+      where: { id: receiptId },
+      data: {
+        status: "COMPLETED",
+        ocrConfidence: ocrResult.confidence,
+        ocrRawResponse: JSON.parse(JSON.stringify({ text: ocrResult.rawText })),
+        processedAt: new Date(),
+      },
+    });
+
+    console.log(`[OCR] Completed: ${receiptId} - confidence: ${ocrResult.confidence.toFixed(2)}`);
+  } catch (error) {
+    console.error(`[OCR] Failed: ${receiptId} -`, error instanceof Error ? error.message : error);
+
+    await prisma.receipt.update({
+      where: { id: receiptId },
+      data: {
+        status: "FAILED",
+        errorMessage: error instanceof Error ? error.message : "Unknown OCR error",
+      },
+    }).catch((e) => {
+      console.error(`[OCR] Failed to update receipt status:`, e.message);
+    });
+
+    throw error;
   }
-
-  const fileName = receipt.fileUrl.split("/").slice(-2).join("/");
-
-  const { data: fileData, error } = await supabase.storage
-    .from("receipts")
-    .download(fileName);
-
-  if (error || !fileData) {
-    throw new Error(`Failed to download receipt file: ${error.message}`);
-  }
-
-  const buffer = Buffer.from(await fileData.arrayBuffer());
-  const ocrResult = await ocrService.processImage(buffer);
-
-  await prisma.receiptData.create({
-    data: {
-      receiptId,
-      merchantName: ocrResult.merchantName,
-      merchantAddress: ocrResult.merchantAddress,
-      merchantPhone: ocrResult.merchantPhone,
-      receiptNumber: ocrResult.receiptNumber,
-      transactionDate: ocrResult.transactionDate,
-      subtotal: ocrResult.subtotal,
-      taxAmount: ocrResult.taxAmount,
-      taxRate: ocrResult.taxRate,
-      discountAmount: ocrResult.discountAmount,
-      totalAmount: ocrResult.totalAmount,
-      currency: ocrResult.currency,
-      paymentMethod: ocrResult.paymentMethod,
-      lineItems: ocrResult.lineItems,
-    },
-  });
-
-  await prisma.receipt.update({
-    where: { id: receiptId },
-    data: {
-      status: "COMPLETED",
-      ocrConfidence: ocrResult.confidence,
-      ocrRawResponse: JSON.parse(JSON.stringify({ text: ocrResult.rawText })),
-      processedAt: new Date(),
-    },
-  });
-
-  console.log(`[OCR] Completed: ${receiptId} - confidence: ${ocrResult.confidence.toFixed(2)}`);
 }
 
 async function checkBudgetAlert(budgetId: string) {

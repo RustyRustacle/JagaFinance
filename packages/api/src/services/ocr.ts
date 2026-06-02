@@ -1,5 +1,8 @@
 import vision from "@google-cloud/vision";
 import { createWorker } from "tesseract.js";
+import os from "os";
+import fs from "fs";
+import path from "path";
 
 export interface OCRResult {
   merchantName: string | null;
@@ -30,7 +33,13 @@ export class OCRService {
   private visionClient: vision.ImageAnnotatorClient | null = null;
 
   constructor() {
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+      const credPath = path.join(os.tmpdir(), "gcp-credentials.json");
+      fs.writeFileSync(credPath, process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+      this.visionClient = new vision.ImageAnnotatorClient({
+        keyFilename: credPath,
+      });
+    } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
       this.visionClient = new vision.ImageAnnotatorClient({
         keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
       });
@@ -66,7 +75,7 @@ export class OCRService {
     imageBuffer: Buffer
   ): Promise<OCRResult> {
     const worker = await createWorker("eng", 1, {
-      cachePath: "/tmp/tesseract",
+      cachePath: os.tmpdir() + "/tesseract",
     });
 
     const {
