@@ -234,7 +234,7 @@ receiptRouter.post(
               status: "FINALIZED",
               blockchainTxHash: bcResult.txHash,
               blockchainStatus: "CONFIRMED",
-              blockchainNetwork: process.env.BLOCKCHAIN_CHAIN_ID === "84532" ? "base_sepolia" : "base",
+              blockchainNetwork: process.env.BLOCKCHAIN_CHAIN_ID === "11155111" ? "sepolia" : "mainnet",
               blockchainSubmittedAt: new Date(),
               blockchainConfirmedAt: new Date(),
             },

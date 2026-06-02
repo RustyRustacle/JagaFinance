@@ -1,9 +1,9 @@
 import { ethers } from "ethers";
 
 const CONTRACT_ADDRESS = process.env.BLOCKCHAIN_CONTRACT_ADDRESS || "";
-const RPC_URL = process.env.BLOCKCHAIN_RPC_URL || "https://sepolia.base.org";
+const RPC_URL = process.env.BLOCKCHAIN_RPC_URL || "https://ethereum-sepolia.publicnode.com";
 const PRIVATE_KEY = process.env.BLOCKCHAIN_PRIVATE_KEY || "";
-const CHAIN_ID = process.env.BLOCKCHAIN_CHAIN_ID || "84532";
+const CHAIN_ID = process.env.BLOCKCHAIN_CHAIN_ID || "11155111";
 
 const RECEIPT_VERIFICATION_ABI = [
   "function verifyReceipt(bytes32 _receiptHash, string calldata _tenantId) external",
