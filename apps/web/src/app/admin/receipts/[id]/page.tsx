@@ -235,7 +235,7 @@ export default function AdminReceiptDetailPage() {
                 </span>
                 <div>
                   <p className="text-xs text-gray-500 mb-0.5">Network</p>
-                  <p className="text-sm font-medium text-gray-900">{receipt.blockchainNetwork || "base_sepolia"}</p>
+                  <p className="text-sm font-medium text-gray-900">{receipt.blockchainNetwork || "sepolia"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-0.5">Tx Hash</p>
