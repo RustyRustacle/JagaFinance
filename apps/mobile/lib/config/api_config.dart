@@ -1,6 +1,6 @@
 class ApiConfig {
   // Kita bypass sementara dari Environment, langsung tembak IP asli Laptop Anda
-  static const String baseUrl = 'http://192.168.18.164:3001/api/v1';
+  static const String baseUrl = 'https://jagafinance-production.up.railway.app/api/v1';
 
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 30);
