@@ -271,6 +271,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
   }
 
   void _showCreateSheet() {
+    context.read<DashboardProvider>().loadCategories();
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -353,15 +354,26 @@ class _CreateBudgetSheetState extends State<_CreateBudgetSheet> {
           const SizedBox(height: 20),
           const Text('Kategori', style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedCategoryId, // FIXED: Mengganti initialValue menjadi value agar bisa dicompile
-            decoration: InputDecoration(
-              hintText: 'Pilih kategori',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.border),
             ),
-            items: dash.categories.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
-            onChanged: (v) => setState(() => _selectedCategoryId = v),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedCategoryId,
+                hint: const Text('Pilih kategori',
+                    style: TextStyle(fontSize: 14, color: AppTheme.textSecondary)),
+                isExpanded: true,
+                items: dash.categories.map((c) => DropdownMenuItem(
+                  value: c.id,
+                  child: Text(c.name, style: const TextStyle(fontSize: 14)),
+                )).toList(),
+                onChanged: (v) => setState(() => _selectedCategoryId = v),
+              ),
+            ),
           ),
           const SizedBox(height: 16),
           const Text('Jumlah Anggaran', style: TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
