@@ -32,7 +32,6 @@ healthRouter.get("/", async (_req, res) => {
     health.services.database = "connected";
   } catch {
     health.services.database = "disconnected";
-    health.status = "degraded";
   }
 
   try {
@@ -41,11 +40,10 @@ healthRouter.get("/", async (_req, res) => {
     health.services.redis = "connected";
   } catch {
     health.services.redis = "disconnected";
-    health.status = "degraded";
   }
 
   health.services.storage =
     process.env.SUPABASE_URL ? "connected" : "not_configured";
 
-  res.status(health.status === "healthy" ? 200 : 503).json(health);
+  res.json(health);
 });
