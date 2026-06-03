@@ -7,6 +7,7 @@ function getConnection(): Redis {
   if (!connection) {
     connection = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
       maxRetriesPerRequest: null,
+      lazyConnect: true,
     });
   }
   return connection;
