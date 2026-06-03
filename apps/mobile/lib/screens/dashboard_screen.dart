@@ -104,7 +104,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
         PopupMenuButton<String>(
           offset: const Offset(0, 48),
           onSelected: (v) async {
-            if (v == 'logout') {
+            if (v == 'profile') {
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text('Profil'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _profileRow('Nama', auth.user?.name ?? '-'),
+                      const SizedBox(height: 8),
+                      _profileRow('Email', auth.user?.email),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Tutup'),
+                    ),
+                  ],
+                ),
+              );
+            } else if (v == 'logout') {
               final navigator = Navigator.of(context);
               await context.read<AuthProvider>().logout();
               if (mounted) {
@@ -448,5 +470,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _switchTab(int index) {
     widget.onTabChange?.call(index);
+  }
+
+  Widget _profileRow(String label, String? value) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 60,
+          child: Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
+        ),
+        Expanded(
+          child: Text(value ?? '-', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppTheme.textPrimary)),
+        ),
+      ],
+    );
   }
 }
