@@ -169,17 +169,28 @@ class Expense {
   });
 
   factory Expense.fromJson(Map<String, dynamic> json) {
+    // PROTEKSI: Mencegah error Parsing Date yang sering menyebabkan Black Screen
+    DateTime parsedDate;
+    try {
+      parsedDate = _parseDate(json['expense_date'] ?? json['expenseDate']) ?? DateTime.now();
+    } catch (e) {
+      parsedDate = DateTime.now();
+    }
+
     return Expense(
       id: json['id']?.toString() ?? '',
       tenantId: (json['tenant_id'] ?? json['tenantId'] ?? '').toString(),
       receiptId: (json['receipt_id'] ?? json['receiptId'])?.toString(),
       categoryId: (json['category_id'] ?? json['categoryId'] ?? '').toString(),
       createdBy: (json['created_by'] ?? json['createdBy'] ?? '').toString(),
-      title: json['title']?.toString() ?? '',
+      // PROTEKSI: Fallback Title yang aman untuk UI
+      title: json['title']?.toString().isNotEmpty == true 
+          ? json['title'].toString() 
+          : 'Transaksi Tanpa Nama',
       description: json['description']?.toString(),
       amount: _parseDouble(json['amount']) ?? 0.0,
       currency: json['currency']?.toString() ?? 'IDR',
-      expenseDate: _parseDate(json['expense_date'] ?? json['expenseDate']) ?? DateTime.now(),
+      expenseDate: parsedDate,
       paymentMethod: json['payment_method']?.toString() ?? json['paymentMethod']?.toString(),
       status: json['status']?.toString() ?? 'DRAFT',
       taxDeductible: json['tax_deductible'] as bool? ?? json['taxDeductible'] as bool? ?? false,

@@ -355,66 +355,73 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: dash.isUploading
-                            ? null
-                            : () async {
-                                _pollingTimer?.cancel();
-                                final messenger = ScaffoldMessenger.of(context);
-                                final provider = context.read<DashboardProvider>();
-                                final title = _merchantController.text.trim();
-                                final amountStr = _amountController.text.trim().replaceAll(RegExp(r'[^0-9.]'), '');
-                                final dateStr = _dateController.text.trim();
+    ? null
+    : () async {
+        _pollingTimer?.cancel();
+        final messenger = ScaffoldMessenger.of(context);
+        final provider = context.read<DashboardProvider>();
+        final title = _merchantController.text.trim();
+        final amountStr = _amountController.text.trim().replaceAll(RegExp(r'[^0-9.]'), '');
+        final dateStr = _dateController.text.trim();
 
-                                if (title.isEmpty || amountStr.isEmpty || dateStr.isEmpty || _selectedCategoryId == null) {
-                                  messenger.showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Lengkapi data merchant, tanggal, jumlah, dan kategori'),
-                                      backgroundColor: Colors.orange,
-                                    ),
-                                  );
-                                  return;
-                                }
+        if (title.isEmpty || amountStr.isEmpty || dateStr.isEmpty || _selectedCategoryId == null) {
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Lengkapi data merchant, tanggal, jumlah, dan kategori'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
 
-                                final amount = double.tryParse(amountStr);
-                                if (amount == null || amount <= 0) {
-                                  messenger.showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Jumlah tidak valid'),
-                                      backgroundColor: Colors.orange,
-                                    ),
-                                  );
-                                  return;
-                                }
+        final amount = double.tryParse(amountStr);
+        if (amount == null || amount <= 0) {
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Jumlah tidak valid'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
 
-                                final navigator = Navigator.of(context);
-                                final ok = await provider.createExpense(
-                                  title: title,
-                                  amount: amount,
-                                  expenseDate: dateStr,
-                                  receiptId: provider.lastUploadedReceiptId,
-                                  categoryId: _selectedCategoryId, 
-                                );
+        final navigator = Navigator.of(context);
+        final ok = await provider.createExpense(
+          title: title,
+          amount: amount,
+          expenseDate: dateStr,
+          receiptId: provider.lastUploadedReceiptId,
+          categoryId: _selectedCategoryId, 
+        );
 
-                                if (mounted) {
-                                  if (ok) {
-                                    messenger.showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Pengeluaran berhasil disimpan',
-                                            style: TextStyle(fontWeight: FontWeight.bold)),
-                                        backgroundColor: Colors.green,
-                                        duration: Duration(seconds: 2),
-                                      ),
-                                    );
-                                    navigator.pop();
-                                  } else {
-                                    messenger.showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Gagal menyimpan pengeluaran'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
+        if (mounted) {
+          if (ok) {
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text('Pengeluaran berhasil disimpan',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 1),
+              ),
+            );
+
+            // ===================================================================
+            // ===================================================================
+            navigator.popUntil((route) => route.isFirst);
+
+            // Pemicu otomatis agar data grafik di halaman Beranda langsung ter-refresh segar
+            provider.loadExpenses(refresh: true);
+            
+          } else {
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text('Gagal menyimpan pengeluaran'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primary,
                           padding: const EdgeInsets.symmetric(vertical: 14),

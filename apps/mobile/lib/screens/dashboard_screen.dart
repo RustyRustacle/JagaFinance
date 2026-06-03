@@ -285,12 +285,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Text('Tren Pengeluaran', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
           const SizedBox(height: 16),
           SizedBox(
-            height: 120,
+            height: 100, 
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(trends.length, (i) {
                 final t = trends[i];
-                final height = maxAmount > 0 ? (t.amount / maxAmount) * 100 : 0.0;
+                final height = maxAmount > 0 ? (t.amount / maxAmount) * 80 : 0.0; 
                 final monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
                 final monthNum = int.tryParse(t.month.split('-')[1]) ?? 0;
                 return Expanded(
@@ -305,7 +305,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         const SizedBox(height: 4),
                         Container(
-                          height: height.clamp(8.0, 100.0),
+                          height: height.clamp(8.0, 70.0), 
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [AppTheme.primary, AppTheme.secondary],
