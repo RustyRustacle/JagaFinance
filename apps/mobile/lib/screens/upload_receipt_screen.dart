@@ -308,17 +308,18 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                     return SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: dash.isUploading
+                          onPressed: dash.isUploading
                             ? null
                             : () async {
                                 _pollingTimer?.cancel();
+                                final messenger = ScaffoldMessenger.of(context);
                                 final provider = context.read<DashboardProvider>();
                                 final title = _merchantController.text.trim();
                                 final amountStr = _amountController.text.trim().replaceAll(RegExp(r'[^0-9.]'), '');
                                 final dateStr = _dateController.text.trim();
 
                                 if (title.isEmpty || amountStr.isEmpty || dateStr.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
+                                  messenger.showSnackBar(
                                     const SnackBar(
                                       content: Text('Lengkapi data merchant, tanggal, dan jumlah'),
                                       backgroundColor: Colors.orange,
@@ -329,7 +330,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
 
                                 final amount = double.tryParse(amountStr);
                                 if (amount == null || amount <= 0) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
+                                  messenger.showSnackBar(
                                     const SnackBar(
                                       content: Text('Jumlah tidak valid'),
                                       backgroundColor: Colors.orange,
@@ -338,6 +339,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                                   return;
                                 }
 
+                                final navigator = Navigator.of(context);
                                 final ok = await provider.createExpense(
                                   title: title,
                                   amount: amount,
@@ -347,7 +349,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
 
                                 if (mounted) {
                                   if (ok) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    messenger.showSnackBar(
                                       const SnackBar(
                                         content: Text('Pengeluaran berhasil disimpan',
                                             style: TextStyle(fontWeight: FontWeight.bold)),
@@ -355,9 +357,9 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                                         duration: Duration(seconds: 2),
                                       ),
                                     );
-                                    Navigator.of(context).pop();
+                                    navigator.pop();
                                   } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    messenger.showSnackBar(
                                       const SnackBar(
                                         content: Text('Gagal menyimpan pengeluaran'),
                                         backgroundColor: Colors.red,

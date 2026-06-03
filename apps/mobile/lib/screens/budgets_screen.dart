@@ -304,6 +304,8 @@ class _CreateBudgetSheetState extends State<_CreateBudgetSheet> {
   Future<void> _submit() async {
     if (_selectedCategoryId == null || _amountController.text.isEmpty) return;
     setState(() => _isSubmitting = true);
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final dash = context.read<DashboardProvider>();
       final now = DateTime.now();
@@ -322,16 +324,16 @@ class _CreateBudgetSheetState extends State<_CreateBudgetSheet> {
       );
       if (mounted) {
         if (ok) {
-          Navigator.pop(context);
+          navigator.pop();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             const SnackBar(content: Text('Gagal membuat anggaran')),
           );
         }
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           const SnackBar(content: Text('Gagal membuat anggaran')),
         );
       }
