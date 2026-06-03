@@ -5,6 +5,7 @@ import '../models/user.dart';
 
 class AuthService {
   final Dio _dio;
+  final Dio _logoutDio;
   final FlutterSecureStorage _storage;
 
   AuthService()
@@ -13,6 +14,13 @@ class AuthService {
             baseUrl: ApiConfig.baseUrl,
             connectTimeout: ApiConfig.connectTimeout,
             receiveTimeout: ApiConfig.receiveTimeout,
+          ),
+        ),
+        _logoutDio = Dio(
+          BaseOptions(
+            baseUrl: ApiConfig.baseUrl,
+            connectTimeout: ApiConfig.logoutTimeout,
+            receiveTimeout: ApiConfig.logoutTimeout,
           ),
         ),
         _storage = const FlutterSecureStorage();
@@ -51,12 +59,14 @@ class AuthService {
     try {
       final token = await _storage.read(key: ApiConfig.authTokenKey);
       if (token != null) {
-        await _dio.post(
+        await _logoutDio.post(
           '/auth/logout',
           options: Options(headers: {'Authorization': 'Bearer $token'}),
         );
       }
-    } catch (_) {}
+    } catch (_) {
+      // Timeout/gagal → tetap bersihin token lokal
+    }
     await _storage.delete(key: ApiConfig.authTokenKey);
     await _storage.delete(key: ApiConfig.refreshTokenKey);
     await _storage.delete(key: ApiConfig.userDataKey);
