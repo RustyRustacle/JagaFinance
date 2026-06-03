@@ -19,6 +19,7 @@ class DashboardProvider extends ChangeNotifier {
   final int _limit = 20;
   double _uploadProgress = 0;
   bool _isUploading = false;
+  String? _lastUploadedReceiptId;
 
   DashboardProvider(this._api);
 
@@ -33,6 +34,7 @@ class DashboardProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   double get uploadProgress => _uploadProgress;
   bool get isUploading => _isUploading;
+  String? get lastUploadedReceiptId => _lastUploadedReceiptId;
 
   Future<void> loadDashboard() async {
     _isLoading = true;
@@ -162,10 +164,11 @@ class DashboardProvider extends ChangeNotifier {
     _isUploading = true;
     _uploadProgress = 0;
     _errorMessage = null;
+    _lastUploadedReceiptId = null;
     notifyListeners();
 
     try {
-      await _api.upload(
+      final response = await _api.upload(
         '/receipts/upload',
         filePath: filePath,
         onProgress: (sent, total) {
@@ -173,6 +176,8 @@ class DashboardProvider extends ChangeNotifier {
           notifyListeners();
         },
       );
+      final receiptData = response.data['data'] as Map<String, dynamic>?;
+      _lastUploadedReceiptId = receiptData?['id'] as String?;
       _isUploading = false;
       _uploadProgress = 1;
       notifyListeners();
@@ -181,6 +186,28 @@ class DashboardProvider extends ChangeNotifier {
       _isUploading = false;
       _errorMessage = 'Gagal mengunggah struk ke cloud storage';
       notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> createExpense({
+    required String title,
+    required double amount,
+    required String expenseDate,
+    String? receiptId,
+    String? categoryId,
+  }) async {
+    try {
+      await _api.post('/expenses', data: {
+        'title': title,
+        'amount': amount,
+        'expense_date': expenseDate,
+        if (receiptId != null) 'receipt_id': receiptId,
+        if (categoryId != null) 'category_id': categoryId,
+      });
+      await loadExpenses(refresh: true);
+      return true;
+    } catch (e) {
       return false;
     }
   }
