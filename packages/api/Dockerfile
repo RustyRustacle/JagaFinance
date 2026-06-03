@@ -6,10 +6,9 @@ WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/api/package.json ./packages/api/package.json
 COPY packages/db/package.json ./packages/db/package.json
-COPY packages/blockchain/package.json ./packages/blockchain/package.json
-COPY apps/web/package.json ./apps/web/package.json
-RUN pnpm install --frozen-lockfile
-COPY . .
+RUN pnpm install --frozen-lockfile --filter @jagafinance/api --filter @jagafinance/db
+COPY packages/api ./packages/api
+COPY packages/db ./packages/db
 RUN pnpm --filter=@jagafinance/db generate
 
 EXPOSE 3001
