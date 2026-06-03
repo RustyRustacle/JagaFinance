@@ -8,39 +8,44 @@ function getConnection(): Redis {
     connection = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
       maxRetriesPerRequest: null,
       lazyConnect: true,
+      enableOfflineQueue: false,
     });
   }
   return connection;
 }
 
-export const ocrQueue = new Queue("ocr-processing", {
-  connection: getConnection(),
-});
+function getQueue(name: string): Queue {
+  return new Queue(name, { connection: getConnection() });
+}
 
-export const alertQueue = new Queue("budget-alerts", {
-  connection: getConnection(),
-});
+function getOcrQueue(): Queue {
+  return getQueue("ocr-processing");
+}
 
-export const exportQueue = new Queue("export-processing", {
-  connection: getConnection(),
-});
+function getAlertQueue(): Queue {
+  return getQueue("budget-alerts");
+}
+
+function getExportQueue(): Queue {
+  return getQueue("export-processing");
+}
 
 export async function enqueueOCR(receiptId: string) {
-  await ocrQueue.add("process-receipt", { receiptId }, {
+  await getOcrQueue().add("process-receipt", { receiptId }, {
     attempts: 3,
     backoff: { type: "exponential", delay: 2000 },
   });
 }
 
 export async function enqueueBudgetAlert(budgetId: string) {
-  await alertQueue.add("check-budget", { budgetId }, {
+  await getAlertQueue().add("check-budget", { budgetId }, {
     attempts: 2,
     delay: 5000,
   });
 }
 
 export async function enqueueExport(exportId: string) {
-  await exportQueue.add("process-export", { exportId }, {
+  await getExportQueue().add("process-export", { exportId }, {
     attempts: 2,
     backoff: { type: "fixed", delay: 3000 },
   });
