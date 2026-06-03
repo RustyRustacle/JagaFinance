@@ -1,6 +1,13 @@
 import "express-async-errors";
 import "dotenv/config";
 import express from "express";
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection:", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
