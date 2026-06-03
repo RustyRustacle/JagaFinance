@@ -29,6 +29,9 @@ import { startWorkers } from "./lib/queue";
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Railway runs behind a reverse proxy — trust X-Forwarded-For for rate limiting
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(
   cors({
