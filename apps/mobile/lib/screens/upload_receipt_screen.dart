@@ -22,6 +22,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
   final TextEditingController _merchantController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
+  String? _selectedCategoryId; 
   
   Timer? _pollingTimer;
 
@@ -29,7 +30,9 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DashboardProvider>().clearError();
+      final provider = context.read<DashboardProvider>();
+      provider.clearError();
+      provider.loadCategories(); 
     });
   }
 
@@ -54,6 +57,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
         _merchantController.clear();
         _dateController.clear();
         _amountController.clear();
+        _selectedCategoryId = null; 
       });
       
       if (!mounted) return;
@@ -299,6 +303,48 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                       _editableRow(Icons.calendar_today_outlined, 'Tanggal', _dateController, isOcrLoading: _isOcrProcessing, hintText: 'YYYY-MM-DD'),
                       const SizedBox(height: 16),
                       _editableRow(Icons.attach_money_outlined, 'Jumlah (Rp)', _amountController, isOcrLoading: _isOcrProcessing, keyboardType: TextInputType.number),
+                      const SizedBox(height: 16),
+                      
+                      Consumer<DashboardProvider>(
+                        builder: (context, dash, _) {
+                          return Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(color: AppTheme.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppTheme.border)),
+                                child: const Icon(Icons.category_outlined, size: 18, color: AppTheme.textSecondary),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(flex: 2, child: Text('Kategori', style: TextStyle(fontSize: 13, color: AppTheme.textSecondary))),
+                              Expanded(
+                                flex: 5,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.surface,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: AppTheme.border),
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: _selectedCategoryId,
+                                      hint: const Text('Pilih kategori', style: TextStyle(fontSize: 13, color: AppTheme.textTertiary)),
+                                      isExpanded: true,
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                                      items: dash.categories.map((c) => DropdownMenuItem(
+                                        value: c.id,
+                                        child: Text(c.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                                      )).toList(),
+                                      onChanged: (v) => setState(() => _selectedCategoryId = v),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -308,7 +354,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                     return SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                          onPressed: dash.isUploading
+                        onPressed: dash.isUploading
                             ? null
                             : () async {
                                 _pollingTimer?.cancel();
@@ -318,10 +364,10 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                                 final amountStr = _amountController.text.trim().replaceAll(RegExp(r'[^0-9.]'), '');
                                 final dateStr = _dateController.text.trim();
 
-                                if (title.isEmpty || amountStr.isEmpty || dateStr.isEmpty) {
+                                if (title.isEmpty || amountStr.isEmpty || dateStr.isEmpty || _selectedCategoryId == null) {
                                   messenger.showSnackBar(
                                     const SnackBar(
-                                      content: Text('Lengkapi data merchant, tanggal, dan jumlah'),
+                                      content: Text('Lengkapi data merchant, tanggal, jumlah, dan kategori'),
                                       backgroundColor: Colors.orange,
                                     ),
                                   );
@@ -345,6 +391,7 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                                   amount: amount,
                                   expenseDate: dateStr,
                                   receiptId: provider.lastUploadedReceiptId,
+                                  categoryId: _selectedCategoryId, 
                                 );
 
                                 if (mounted) {

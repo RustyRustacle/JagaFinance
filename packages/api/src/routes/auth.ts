@@ -119,7 +119,7 @@ authRouter.post("/login", validate(loginSchema), async (req, res) => {
 
   if (error || !authData.user) {
     console.error("[LOGIN] Supabase login error:", error);
-    throw new AppError(401, "AUTH_REQUIRED", "Invalid email or password");
+    throw new AppError(401, "AUTH_REQUIRED", error?.message || "Invalid email or password");
   }
   
   console.log(`[LOGIN] Supabase auth success for user ID: ${authData.user.id}`);

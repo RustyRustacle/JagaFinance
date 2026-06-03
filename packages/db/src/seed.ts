@@ -16,8 +16,11 @@ const defaultCategories = [
 async function main() {
   console.log("Seeding database...");
 
-  const tenant = await prisma.tenant.create({
-    data: {
+  // memakai upsert untuk Tenant berdasarkan unique slug
+  const tenant = await prisma.tenant.upsert({
+    where: { slug: "demo-company" },
+    update: {},
+    create: {
       name: "Demo Company",
       slug: "demo-company",
       industry: "retail",
@@ -26,20 +29,31 @@ async function main() {
     },
   });
 
-  console.log(`Created tenant: ${tenant.name}`);
+  console.log(`Tenant ready: ${tenant.name}`);
 
-  const user = await prisma.user.create({
-    data: {
-      id: "00000000-0000-0000-0000-000000000001",
-      email: "admin@demo.com",
+  // memakai upsert untuk User berdasarkan unique ID Supabase Anda
+  const user = await prisma.user.upsert({
+    where: { id: "09e19405-3a2f-47e1-82e7-d851d4ac5322" },
+    update: { email: "admin3@gmail.com" },
+    create: {
+      id: "09e19405-3a2f-47e1-82e7-d851d4ac5322",
+      email: "admin3@gmail.com",
       name: "Demo Admin",
     },
   });
 
-  console.log(`Created user: ${user.email}`);
+  console.log(`User ready: ${user.email}`);
 
-  await prisma.tenantMember.create({
-    data: {
+  // memakai upsert untuk TenantMember berdasarkan kombinasi unique [tenantId, userId]
+  await prisma.tenantMember.upsert({
+    where: {
+      tenantId_userId: {
+        tenantId: tenant.id,
+        userId: user.id,
+      },
+    },
+    update: {},
+    create: {
       tenantId: tenant.id,
       userId: user.id,
       role: "ADMIN",
@@ -48,19 +62,27 @@ async function main() {
     },
   });
 
-  console.log("Created admin membership");
+  console.log("Admin membership ready");
 
+  // memakai upsert untuk Expense Categories berdasarkan kombinasi unique [tenantId, name]
   for (const cat of defaultCategories) {
-    await prisma.expenseCategory.create({
-      data: {
+    await prisma.expenseCategory.upsert({
+      where: {
+        tenantId_name: {
+          tenantId: tenant.id,
+          name: cat.name,
+        },
+      },
+      update: {},
+      create: {
         ...cat,
         tenantId: tenant.id,
       },
     });
   }
 
-  console.log(`Created ${defaultCategories.length} default categories`);
-  console.log("Seeding completed!");
+  console.log(`Created/Verified ${defaultCategories.length} default categories`);
+  console.log("Seeding completed successfully!");
 }
 
 main()

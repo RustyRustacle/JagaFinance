@@ -46,6 +46,7 @@ class DashboardProvider extends ChangeNotifier {
       _dashboard = DashboardData.fromJson(response.data['data'] as Map<String, dynamic>);
     } catch (e) {
       _errorMessage = 'Gagal memuat dashboard';
+      debugPrint("Error loadDashboard: $e");
     }
     _isLoading = false;
     notifyListeners();
@@ -87,6 +88,7 @@ class DashboardProvider extends ChangeNotifier {
       _hasMore = _page < totalPages;
     } catch (e) {
       _errorMessage = 'Gagal memuat pengeluaran';
+      debugPrint("Error loadExpenses: $e");
     }
     _isLoading = false;
     _isLoadingMore = false;
@@ -121,18 +123,21 @@ class DashboardProvider extends ChangeNotifier {
         try {
           parsedReceipts.add(Receipt.fromJson(item as Map<String, dynamic>));
         } catch (itemError) {
-          debugPrint("Safe Parsing Warning (Receipt Ignored): \$itemError");
+          debugPrint("Safe Parsing Warning (Receipt Ignored): $itemError");
         }
       }
 
       _receipts = parsedReceipts;
     } catch (e) {
-      debugPrint("Quiet Load Receipts Failed: \$e");
+      debugPrint("Quiet Load Receipts Failed: $e");
     }
     _isLoading = false;
     notifyListeners();
   }
 
+  // ===================================================================
+  // Penerapan Safe Parsing Loop untuk Mencegah Layar Blank
+  // ===================================================================
   Future<void> loadBudgets() async {
     _isLoading = true;
     _errorMessage = null;
@@ -140,11 +145,20 @@ class DashboardProvider extends ChangeNotifier {
 
     try {
       final response = await _api.get('/budgets');
-      _budgets = (response.data['data'] as List<dynamic>)
-          .map((e) => Budget.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final List<dynamic> rawList = response.data['data'] as List<dynamic>;
+      List<Budget> parsedBudgets = [];
+
+      for (var item in rawList) {
+        try {
+          parsedBudgets.add(Budget.fromJson(item as Map<String, dynamic>));
+        } catch (itemError) {
+          debugPrint("Gagal mengurai item anggaran tunggal (Diabaikan agar tidak merusak list): $itemError");
+        }
+      }
+      _budgets = parsedBudgets;
     } catch (e) {
       _errorMessage = 'Gagal memuat anggaran';
+      debugPrint("Komponen Utama loadBudgets Error: $e");
     }
     _isLoading = false;
     notifyListeners();
@@ -190,6 +204,9 @@ class DashboardProvider extends ChangeNotifier {
     }
   }
 
+  // ===================================================================
+  // SINKRONISASI TOTAL: Pemicu Otomatis Ketika Pengeluaran Baru Disimpan
+  // ===================================================================
   Future<bool> createExpense({
     required String title,
     required double amount,
@@ -205,15 +222,21 @@ class DashboardProvider extends ChangeNotifier {
         if (receiptId != null) 'receipt_id': receiptId,
         if (categoryId != null) 'category_id': categoryId,
       });
-      await loadExpenses(refresh: true);
+      
+      
+      await loadExpenses(refresh: true); 
+      await loadBudgets();               
+      await loadDashboard();              
+      
       return true;
     } catch (e) {
+      debugPrint("Gagal menyimpan transaksi pengeluaran: $e");
       return false;
     }
   }
 
   // ===================================================================
-  // AMAN KEMBALI: Fungsi createBudget sudah disuntik ulang ke tempatnya!
+  // Trigger Otomatis Ketika Anggaran Baru Disimpan
   // ===================================================================
   Future<bool> createBudget({
     required String categoryId,
@@ -232,9 +255,14 @@ class DashboardProvider extends ChangeNotifier {
         'end_date': endDate,
         'alert_threshold': alertThreshold,
       });
-      await loadBudgets();
+      
+      
+      await loadBudgets();     
+      await loadDashboard();   
+      
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint("Gagal menyimpan data anggaran baru: $e");
       return false;
     }
   }

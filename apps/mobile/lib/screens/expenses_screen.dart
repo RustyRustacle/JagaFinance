@@ -23,7 +23,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DashboardProvider>()..loadExpenses(refresh: true, categoryId: _selectedCategoryId, status: _selectedStatus)..loadCategories();
+      context.read<DashboardProvider>()
+        ..loadExpenses(refresh: true, categoryId: _selectedCategoryId, status: _selectedStatus)
+        ..loadCategories();
     });
     _scrollController.addListener(_onScroll);
   }
@@ -131,6 +133,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     );
   }
 
+  // ===================================================================
+  // Proteksi Terhadap Space Teks Agar Tidak Overflow
+  // ===================================================================
   Widget _expenseCard(Expense exp) {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -158,21 +163,25 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(exp.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                      child: Text(
+                        exp.title, 
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis, // Untuk Memotong judul merchant jika terlalu panjang
+                      ),
                     ),
+                    const SizedBox(width: 4),
                     StatusBadge(status: exp.status),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(exp.category?.name ?? '', style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-                    const SizedBox(width: 8),
-                    Text(
-                      DateFormat('d MMM yyyy', 'id').format(exp.expenseDate),
-                      style: const TextStyle(fontSize: 12, color: AppTheme.textTertiary),
-                    ),
-                  ],
+                
+                // gabungi row menjadi satu text dengan pelindung otomatis agar tidak menabrak harga
+                Text(
+                  "${exp.category?.name ?? 'Lainnya'}  •  ${DateFormat('d MMM yyyy', 'id').format(exp.expenseDate)}",
+                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

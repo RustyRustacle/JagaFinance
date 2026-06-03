@@ -39,21 +39,21 @@ class Receipt {
 
   factory Receipt.fromJson(Map<String, dynamic> json) {
     return Receipt(
-      id: json['id'] as String,
-      tenantId: json['tenant_id'] as String? ?? json['tenantId'] as String,
-      uploadedBy: json['uploaded_by'] as String? ?? json['uploadedBy'] as String,
-      fileUrl: json['file_url'] as String? ?? json['fileUrl'] as String,
-      fileName: json['file_name'] as String? ?? json['fileName'] as String,
-      fileType: json['file_type'] as String? ?? json['fileType'] as String,
-      fileSize: (json['file_size'] ?? json['fileSize'] ?? 0) as int,
-      status: json['status'] as String? ?? 'UPLOADED',
+      id: json['id']?.toString() ?? '',
+      tenantId: (json['tenant_id'] ?? json['tenantId'] ?? '').toString(),
+      uploadedBy: (json['uploaded_by'] ?? json['uploadedBy'] ?? '').toString(),
+      fileUrl: (json['file_url'] ?? json['fileUrl'] ?? '').toString(),
+      fileName: (json['file_name'] ?? json['fileName'] ?? '').toString(),
+      fileType: (json['file_type'] ?? json['fileType'] ?? '').toString(),
+      fileSize: int.tryParse(json['file_size']?.toString() ?? json['fileSize']?.toString() ?? '0') ?? 0,
+      status: json['status']?.toString() ?? 'UPLOADED',
       ocrConfidence: _parseDouble(json['ocr_confidence'] ?? json['ocrConfidence']),
-      errorMessage: json['error_message'] as String? ?? json['errorMessage'] as String?,
+      errorMessage: json['error_message']?.toString() ?? json['errorMessage']?.toString(),
       processedAt: _parseDate(json['processed_at'] ?? json['processedAt']),
       createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
       updatedAt: _parseDate(json['updated_at'] ?? json['updatedAt']) ?? DateTime.now(),
-      blockchainTxHash: json['blockchain_tx_hash'] as String? ?? json['blockchainTxHash'] as String?,
-      blockchainStatus: json['blockchain_status'] as String? ?? json['blockchainStatus'] as String?,
+      blockchainTxHash: json['blockchain_tx_hash']?.toString() ?? json['blockchainTxHash']?.toString(),
+      blockchainStatus: json['blockchain_status']?.toString() ?? json['blockchainStatus']?.toString(),
       receiptData: json['receiptData'] != null
           ? ReceiptData.fromJson(json['receiptData'] as Map<String, dynamic>)
           : json['receipt_data'] != null
@@ -103,24 +103,22 @@ class ReceiptData {
 
   factory ReceiptData.fromJson(Map<String, dynamic> json) {
     return ReceiptData(
-      id: json['id'] as String,
-      receiptId: json['receipt_id'] as String? ?? json['receiptId'] as String,
-      merchantName: json['merchant_name'] as String? ?? json['merchantName'] as String?,
-      merchantAddress: json['merchant_address'] as String? ?? json['merchantAddress'] as String?,
-      merchantPhone: json['merchant_phone'] as String? ?? json['merchantPhone'] as String?,
-      receiptNumber: json['receipt_number'] as String? ?? json['receiptNumber'] as String?,
+      id: json['id']?.toString() ?? '',
+      receiptId: (json['receipt_id'] ?? json['receiptId'] ?? '').toString(),
+      merchantName: json['merchant_name']?.toString() ?? json['merchantName']?.toString(),
+      merchantAddress: json['merchant_address']?.toString() ?? json['merchantAddress']?.toString(),
+      merchantPhone: json['merchant_phone']?.toString() ?? json['merchantPhone']?.toString(),
+      receiptNumber: json['receipt_number']?.toString() ?? json['receiptNumber']?.toString(),
       transactionDate: _parseDate(json['transaction_date'] ?? json['transactionDate']),
-      subtotal: (json['subtotal'] as num?)?.toDouble(),
-      taxAmount: (json['tax_amount'] as num?)?.toDouble() ?? (json['taxAmount'] as num?)?.toDouble(),
-      taxRate: (json['tax_rate'] as num?)?.toDouble() ?? (json['taxRate'] as num?)?.toDouble(),
-      discountAmount: (json['discount_amount'] as num?)?.toDouble() ?? (json['discountAmount'] as num?)?.toDouble(),
-      totalAmount: (json['total_amount'] ?? json['totalAmount'] ?? 0).runtimeType == double
-          ? (json['total_amount'] ?? json['totalAmount']) as double
-          : ((json['total_amount'] ?? json['totalAmount']) as num).toDouble(),
-      currency: json['currency'] as String? ?? 'IDR',
-      paymentMethod: json['payment_method'] as String? ?? json['paymentMethod'] as String?,
+      subtotal: _parseDouble(json['subtotal']),
+      taxAmount: _parseDouble(json['tax_amount'] ?? json['taxAmount']),
+      taxRate: _parseDouble(json['tax_rate'] ?? json['taxRate']),
+      discountAmount: _parseDouble(json['discount_amount'] ?? json['discountAmount']),
+      totalAmount: _parseDouble(json['total_amount'] ?? json['totalAmount']) ?? 0.0,
+      currency: json['currency']?.toString() ?? 'IDR',
+      paymentMethod: json['payment_method']?.toString() ?? json['paymentMethod']?.toString(),
       isVerified: json['is_verified'] as bool? ?? json['isVerified'] as bool? ?? false,
-      verificationNotes: json['verification_notes'] as String? ?? json['verificationNotes'] as String?,
+      verificationNotes: json['verification_notes']?.toString() ?? json['verificationNotes']?.toString(),
     );
   }
 }
@@ -172,22 +170,22 @@ class Expense {
 
   factory Expense.fromJson(Map<String, dynamic> json) {
     return Expense(
-      id: json['id'] as String,
-      tenantId: json['tenant_id'] as String? ?? json['tenantId'] as String,
-      receiptId: json['receipt_id'] as String? ?? json['receiptId'] as String?,
-      categoryId: json['category_id'] as String? ?? json['categoryId'] as String,
-      createdBy: json['created_by'] as String? ?? json['createdBy'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      amount: (json['amount'] as num).toDouble(),
-      currency: json['currency'] as String? ?? 'IDR',
+      id: json['id']?.toString() ?? '',
+      tenantId: (json['tenant_id'] ?? json['tenantId'] ?? '').toString(),
+      receiptId: (json['receipt_id'] ?? json['receiptId'])?.toString(),
+      categoryId: (json['category_id'] ?? json['categoryId'] ?? '').toString(),
+      createdBy: (json['created_by'] ?? json['createdBy'] ?? '').toString(),
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString(),
+      amount: _parseDouble(json['amount']) ?? 0.0,
+      currency: json['currency']?.toString() ?? 'IDR',
       expenseDate: _parseDate(json['expense_date'] ?? json['expenseDate']) ?? DateTime.now(),
-      paymentMethod: json['payment_method'] as String? ?? json['paymentMethod'] as String?,
-      status: json['status'] as String? ?? 'DRAFT',
+      paymentMethod: json['payment_method']?.toString() ?? json['paymentMethod']?.toString(),
+      status: json['status']?.toString() ?? 'DRAFT',
       taxDeductible: json['tax_deductible'] as bool? ?? json['taxDeductible'] as bool? ?? false,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-      costCenter: json['cost_center'] as String? ?? json['costCenter'] as String?,
-      projectCode: json['project_code'] as String? ?? json['projectCode'] as String?,
+      costCenter: json['cost_center']?.toString() ?? json['costCenter']?.toString(),
+      projectCode: json['project_code']?.toString() ?? json['projectCode']?.toString(),
       createdAt: _parseDate(json['created_at'] ?? json['createdAt']) ?? DateTime.now(),
       category: json['category'] != null
           ? ExpenseCategory.fromJson(json['category'] as Map<String, dynamic>)
@@ -225,15 +223,15 @@ class ExpenseCategory {
 
   factory ExpenseCategory.fromJson(Map<String, dynamic> json) {
     return ExpenseCategory(
-      id: json['id'] as String,
-      tenantId: json['tenant_id'] as String? ?? json['tenantId'] as String,
-      name: json['name'] as String,
-      nameEn: json['name_en'] as String? ?? json['nameEn'] as String?,
-      color: json['color'] as String? ?? '#6B7280',
-      icon: json['icon'] as String?,
-      parentId: json['parent_id'] as String? ?? json['parentId'] as String?,
+      id: json['id']?.toString() ?? '',
+      tenantId: (json['tenant_id'] ?? json['tenantId'] ?? '').toString(),
+      name: json['name']?.toString() ?? '',
+      nameEn: json['name_en']?.toString() ?? json['nameEn']?.toString(),
+      color: json['color']?.toString() ?? '#6B7280',
+      icon: json['icon']?.toString(),
+      parentId: json['parent_id']?.toString() ?? json['parentId']?.toString(),
       isActive: json['is_active'] as bool? ?? json['isActive'] as bool? ?? true,
-      sortOrder: json['sort_order'] as int? ?? json['sortOrder'] as int? ?? 0,
+      sortOrder: int.tryParse(json['sort_order']?.toString() ?? json['sortOrder']?.toString() ?? '0') ?? 0,
     );
   }
 }
@@ -267,15 +265,15 @@ class Budget {
 
   factory Budget.fromJson(Map<String, dynamic> json) {
     return Budget(
-      id: json['id'] as String,
-      tenantId: json['tenant_id'] as String? ?? json['tenantId'] as String,
-      categoryId: json['category_id'] as String? ?? json['categoryId'] as String,
-      amount: (json['amount'] as num).toDouble(),
-      currency: json['currency'] as String? ?? 'IDR',
-      period: json['period'] as String? ?? 'MONTHLY',
+      id: json['id']?.toString() ?? '',
+      tenantId: (json['tenant_id'] ?? json['tenantId'] ?? '').toString(),
+      categoryId: (json['category_id'] ?? json['categoryId'] ?? '').toString(),
+      amount: _parseDouble(json['amount']) ?? 0.0,
+      currency: json['currency']?.toString() ?? 'IDR',
+      period: json['period']?.toString() ?? 'MONTHLY',
       startDate: _parseDate(json['start_date'] ?? json['startDate']) ?? DateTime.now(),
       endDate: _parseDate(json['end_date'] ?? json['endDate']) ?? DateTime.now(),
-      alertThreshold: (json['alert_threshold'] as num?)?.toDouble() ?? (json['alertThreshold'] as num?)?.toDouble() ?? 80,
+      alertThreshold: _parseDouble(json['alert_threshold'] ?? json['alertThreshold']) ?? 80.0,
       isActive: json['is_active'] as bool? ?? json['isActive'] as bool? ?? true,
       category: json['category'] != null
           ? ExpenseCategory.fromJson(json['category'] as Map<String, dynamic>)
@@ -305,13 +303,13 @@ class BudgetUsage {
 
   factory BudgetUsage.fromJson(Map<String, dynamic> json) {
     return BudgetUsage(
-      spent: (json['spent'] as num?)?.toDouble() ?? 0,
-      remaining: (json['remaining'] as num?)?.toDouble() ?? 0,
-      percentage: (json['percentage'] as num?)?.toDouble() ?? 0,
+      spent: _parseDouble(json['spent']) ?? 0.0,
+      remaining: _parseDouble(json['remaining']) ?? 0.0,
+      percentage: _parseDouble(json['percentage']) ?? 0.0,
       alertTriggered: json['alertTriggered'] as bool? ?? false,
-      nextThreshold: (json['nextThreshold'] as num?)?.toDouble() ?? 80,
-      categoryName: json['category']?['name'] as String? ?? 'Unknown',
-      categoryNameEn: json['category']?['nameEn'] as String?,
+      nextThreshold: _parseDouble(json['nextThreshold']) ?? 80.0,
+      categoryName: json['category']?['name']?.toString() ?? 'Unknown',
+      categoryNameEn: json['category']?['nameEn']?.toString(),
     );
   }
 }
@@ -329,9 +327,9 @@ class CategoryExpense {
 
   factory CategoryExpense.fromJson(Map<String, dynamic> json) {
     return CategoryExpense(
-      category: json['category'] as String? ?? 'Unknown',
-      amount: (json['amount'] as num?)?.toDouble() ?? 0,
-      percentage: (json['percentage'] as num?)?.toDouble() ?? 0,
+      category: json['category']?.toString() ?? 'Unknown',
+      amount: _parseDouble(json['amount']) ?? 0.0,
+      percentage: _parseDouble(json['percentage']) ?? 0.0,
     );
   }
 }
@@ -347,8 +345,8 @@ class MonthlyTrend {
 
   factory MonthlyTrend.fromJson(Map<String, dynamic> json) {
     return MonthlyTrend(
-      month: json['month'] as String,
-      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      month: json['month']?.toString() ?? '',
+      amount: _parseDouble(json['amount']) ?? 0.0,
     );
   }
 }
@@ -372,10 +370,10 @@ class DashboardData {
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
     return DashboardData(
-      totalExpenses: (json['total_expenses'] as num?)?.toDouble() ?? 0,
-      totalReceipts: (json['total_receipts'] as int?) ?? 0,
-      pendingReviews: (json['pending_reviews'] as int?) ?? 0,
-      budgetAlerts: (json['budget_alerts'] as int?) ?? 0,
+      totalExpenses: _parseDouble(json['total_expenses'] ?? json['totalExpenses']) ?? 0.0,
+      totalReceipts: int.tryParse(json['total_receipts']?.toString() ?? json['totalReceipts']?.toString() ?? '0') ?? 0,
+      pendingReviews: int.tryParse(json['pending_reviews']?.toString() ?? json['pendingReviews']?.toString() ?? '0') ?? 0,
+      budgetAlerts: int.tryParse(json['budget_alerts']?.toString() ?? json['budgetAlerts']?.toString() ?? '0') ?? 0,
       expensesByCategory: (json['expenses_by_category'] as List<dynamic>?)
               ?.map((e) => CategoryExpense.fromJson(e as Map<String, dynamic>))
               .toList() ??
