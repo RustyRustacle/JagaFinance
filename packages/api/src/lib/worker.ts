@@ -11,6 +11,8 @@ const emailService = new EmailService();
 export async function startWorkers() {
   const connection = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
     maxRetriesPerRequest: null,
+    lazyConnect: true,
+    enableOfflineQueue: false,
   });
 
   const ocrWorker = new Worker(
