@@ -72,43 +72,42 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
   void _startPollingOCR() {
     _pollingTimer?.cancel();
     int secondsElapsed = 0;
+    final provider = context.read<DashboardProvider>();
+    final targetReceiptId = provider.lastUploadedReceiptId;
 
     _pollingTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
       secondsElapsed += 2;
-      if (!mounted || secondsElapsed >= 20) { 
+      if (!mounted || secondsElapsed >= 30) {
         timer.cancel();
-        setState(() => _isOcrProcessing = false); 
+        if (mounted) setState(() => _isOcrProcessing = false);
         return;
       }
 
-      final provider = context.read<DashboardProvider>();
       await provider.loadReceipts(refresh: true);
-      provider.clearError(); 
+      provider.clearError();
 
-      final receipts = provider.receipts;
-      if (receipts.isNotEmpty) {
-        final dynamic latestReceipt = receipts.first;
-        final String statusStr = latestReceipt.status?.toString().toUpperCase() ?? '';
+      final matching = provider.receipts.where((r) => r.id == targetReceiptId).toList();
+      if (matching.isEmpty) return;
 
-        if (statusStr.contains('COMPLETED')) {
-          timer.cancel();
-          setState(() {
-            _isOcrProcessing = false;
-            try {
-              final dynamic resData = latestReceipt.receiptData;
-              if (resData != null) {
-                _merchantController.text = resData.merchantName?.toString() ?? '';
-                String rawDate = resData.transactionDate?.toString() ?? '';
-                _dateController.text = rawDate.length >= 10 ? rawDate.substring(0, 10) : rawDate;
-                _amountController.text = resData.totalAmount?.toString() ?? '';
-              }
-            } catch (_) {}
-          });
-        } 
-        else if (statusStr.contains('FAILED') || statusStr.contains('REJECTED')) {
-          timer.cancel();
-          setState(() => _isOcrProcessing = false); 
-        }
+      final receipt = matching.first;
+      final statusStr = receipt.status.toUpperCase();
+
+      if (statusStr == 'COMPLETED') {
+        timer.cancel();
+        if (!mounted) return;
+        setState(() {
+          _isOcrProcessing = false;
+          final data = receipt.receiptData;
+          if (data != null) {
+            _merchantController.text = data.merchantName ?? '';
+            final rawDate = data.transactionDate?.toIso8601String() ?? '';
+            _dateController.text = rawDate.length >= 10 ? rawDate.substring(0, 10) : rawDate;
+            _amountController.text = data.totalAmount.toStringAsFixed(0);
+          }
+        });
+      } else if (statusStr == 'FAILED' || statusStr == 'REJECTED') {
+        timer.cancel();
+        if (mounted) setState(() => _isOcrProcessing = false);
       }
     });
   }
@@ -304,32 +303,88 @@ class _UploadReceiptScreenState extends State<UploadReceiptScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      _pollingTimer?.cancel();
+                Consumer<DashboardProvider>(
+                  builder: (context, dash, _) {
+                    return SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: dash.isUploading
+                            ? null
+                            : () async {
+                                _pollingTimer?.cancel();
+                                final provider = context.read<DashboardProvider>();
+                                final title = _merchantController.text.trim();
+                                final amountStr = _amountController.text.trim().replaceAll(RegExp(r'[^0-9.]'), '');
+                                final dateStr = _dateController.text.trim();
 
-                      // Untuk Munculkan Notifikasi Dummy 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Data Disimpan', style: TextStyle(fontWeight: FontWeight.bold)),
-                          backgroundColor: Colors.green,
-                          duration: Duration(seconds: 2),
+                                if (title.isEmpty || amountStr.isEmpty || dateStr.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Lengkapi data merchant, tanggal, dan jumlah'),
+                                      backgroundColor: Colors.orange,
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final amount = double.tryParse(amountStr);
+                                if (amount == null || amount <= 0) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Jumlah tidak valid'),
+                                      backgroundColor: Colors.orange,
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final ok = await provider.createExpense(
+                                  title: title,
+                                  amount: amount,
+                                  expenseDate: dateStr,
+                                  receiptId: provider.lastUploadedReceiptId,
+                                );
+
+                                if (mounted) {
+                                  if (ok) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Pengeluaran berhasil disimpan',
+                                            style: TextStyle(fontWeight: FontWeight.bold)),
+                                        backgroundColor: Colors.green,
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                    Navigator.of(context).pop();
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Gagal menyimpan pengeluaran'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                      );
-
-                      
-                      Navigator.of(context).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    icon: const Icon(Icons.check_circle_outline, size: 20, color: Colors.white),
-                    label: const Text('Simpan Ke JagaFinance', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
+                        icon: dash.isUploading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.check_circle_outline, size: 20, color: Colors.white),
+                        label: Text(
+                          dash.isUploading ? 'Mengunggah...' : 'Simpan Ke JagaFinance',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
               const SizedBox(height: 24),
