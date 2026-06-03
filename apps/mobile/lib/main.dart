@@ -83,7 +83,17 @@ class _SplashScreen extends StatelessWidget {
                 color: AppTheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: const Icon(Icons.receipt_long_rounded, size: 40, color: AppTheme.primary),
+
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Padding(
+                  padding: const EdgeInsets.all(14.0), 
+                  child: Image.asset(
+                  'assets/images/app_icon.png', 
+                  fit: BoxFit.contain,
+                ),
+                ),
+              ),
             ),
             const SizedBox(height: 24),
             const Text(
