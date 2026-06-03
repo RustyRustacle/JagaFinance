@@ -1,9 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { createClient } from "@supabase/supabase-js";
-import { AppError } from "./errorHandler";
-import { prisma, Role, InviteStatus } from "@jagafinance/db";
-
-
+import ws from "ws";
+import { Role } from "@jagafinance/db";
+import { Request, Response, NextFunction } from "express";
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
@@ -14,7 +13,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
+  realtime: {
+    transport: ws,
+  },
+});
 
 export interface AuthRequest extends Request {
 user?: {
