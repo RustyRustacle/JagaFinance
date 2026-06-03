@@ -1,6 +1,6 @@
 FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9 --activate
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl wget
 
 WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
@@ -13,6 +13,6 @@ COPY . .
 RUN pnpm --filter=@jagafinance/db generate
 
 EXPOSE 3001
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/v1/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider "http://localhost:$PORT/api/v1/health" || exit 1
 CMD ["pnpm", "--filter=@jagafinance/api", "exec", "tsx", "src/index.ts"]
