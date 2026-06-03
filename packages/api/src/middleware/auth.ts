@@ -1,9 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { createClient } from "@supabase/supabase-js";
 import ws from "ws";
-// Mengambil prisma, Role, dan InviteStatus langsung dari shared package database 
-import { prisma, Role, InviteStatus } from "@jagafinance/db"; 
 
+import { prisma, Role } from "@jagafinance/db"; 
 
 import { AppError } from "../middleware/errorHandler";
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -17,7 +16,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
   realtime: {
-    transport: ws as any, // Tambahkan 'as any' di sini
+    transport: ws as any, 
   },
 });
 
@@ -53,10 +52,14 @@ export const authMiddleware = async (
       throw new AppError(401, "AUTH_REQUIRED", error?.message || "Invalid or expired token");
     }
 
+    // ===================================================================
+    // Mengubah InviteStatus.ACCEPTED menjadi "ACCEPTED"
+    // Ini menghentikan crash ReferenceError secara total di server Railway.
+    // ===================================================================
     const membership = await prisma.tenantMember.findFirst({
       where: {
         userId: user.id,
-        status: InviteStatus.ACCEPTED,
+        status: "ACCEPTED", 
       },
     });
 

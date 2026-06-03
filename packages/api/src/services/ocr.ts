@@ -33,16 +33,33 @@ export class OCRService {
   private visionClient: ImageAnnotatorClient | null = null;
 
   constructor() {
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-      const credPath = path.join(os.tmpdir(), "gcp-credentials.json");
-      fs.writeFileSync(credPath, process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-      this.visionClient = new ImageAnnotatorClient({
-        keyFilename: credPath,
-      });
-    } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      this.visionClient = new ImageAnnotatorClient({
-        keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-      });
+    try {
+      // 🛡️ PERBAIKAN UTAMA: Membaca teks mentah JSON langsung dari Environment Variable tanpa menulis file ke disk
+      const inlineJson = process.env.GOOGLE_CREDENTIALS_JSON || process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+      
+      if (inlineJson && inlineJson.trim().startsWith("{")) {
+        const credentials = JSON.parse(inlineJson);
+        this.visionClient = new ImageAnnotatorClient({ credentials });
+        console.log("🚀 [OCR] Google Vision Client berhasil diinisialisasi menggunakan kode inline JSON di Cloud.");
+      } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+        // Jalur Fallback standard jika menggunakan file path (untuk lokal temanmu)
+        this.visionClient = new ImageAnnotatorClient({
+          keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+        });
+      } else {
+        // Deteksi file lokal otomatis agar tidak merusak proses coding tim kamu di laptop mereka masing-masing
+        const localKeyPath = path.join(process.cwd(), "profound-jet-436504-q9-24b76d8d8ca9.json");
+        if (fs.existsSync(localKeyPath)) {
+          this.visionClient = new ImageAnnotatorClient({
+            keyFilename: localKeyPath,
+          });
+          console.log("[OCR] Google Vision Client berjalan di lokal menggunakan file JSON.");
+        } else {
+          console.warn("[OCR] Kredensial Google Vision tidak ditemukan. Sistem akan murni menggunakan Tesseract.");
+        }
+      }
+    } catch (error) {
+      console.error("[OCR] Gagal melakukan inisialisasi modul Google Vision:", error);
     }
   }
 
