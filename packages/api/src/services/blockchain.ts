@@ -66,6 +66,7 @@ export async function submitReceiptToBlockchain(
   timestamp: string
 ): Promise<BlockchainSubmissionResult> {
   if (!CONTRACT_ADDRESS || !PRIVATE_KEY) {
+    console.warn("[blockchain] Missing BLOCKCHAIN_CONTRACT_ADDRESS or BLOCKCHAIN_PRIVATE_KEY — skipping submission");
     return {
       txHash: "",
       receiptHash: "",
