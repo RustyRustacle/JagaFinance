@@ -39,7 +39,7 @@ graph TB
 
     FA -->|HTTP REST| API
     NW -->|HTTP fetch| API
-    NW -->|@supabase/ssr| SA
+    NW -->|"@supabase/ssr"| SA
 
     API -->|Prisma ORM| PG
     API -->|ioredis| RD
