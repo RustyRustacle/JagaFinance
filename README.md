@@ -226,7 +226,36 @@ All endpoints return a standard envelope:
 - **Real-Time Budget Monitoring** — Configurable periods with alert thresholds
 - **Tax-Compliant Reporting** — PPN/PPh categorization, PDF/Excel exports
 - **Audit Trail** — All mutations logged with actor, action, entity, changes
-- **Blockchain Verification** — Optional receipt hash anchoring on Sepolia
+- **Blockchain Verification** — Receipt hash anchoring on Sepolia Ethereum via smart contract
+
+---
+
+## Blockchain
+
+Receipt hashes are anchored on-chain for tamper-proof audit trails. The flow is triggered automatically when a receipt is approved via `POST /api/v1/receipts/:id/review`.
+
+| Item | Detail |
+|---|---|
+| **Network** | Sepolia Ethereum (chain ID `11155111`) |
+| **Contract** | `ReceiptVerification.sol` |
+| **Address** | [`0xf5eded7E428FF0b74BDE1E2Af848816CfA15e813`](https://sepolia.etherscan.io/address/0xf5eded7E428FF0b74BDE1E2Af848816CfA15e813) |
+| **Hash function** | keccak256 of `(receiptId, totalAmount, timestamp)` |
+| **Gas** | Paid by API wallet (service account) |
+| **View on explorer** | `https://sepolia.etherscan.io/tx/<blockchainTxHash>` |
+
+### Commands
+
+```bash
+# Compile contract
+pnpm blockchain:compile
+
+# Deploy to Sepolia (requires DEPLOYER_PRIVATE_KEY + ETH)
+pnpm blockchain:deploy
+```
+
+### Smart Contract
+
+The `ReceiptVerification` contract stores receipt hashes mapped to tenant IDs with timestamps. It emits a `ReceiptVerified` event on each submission. Only the contract owner (API wallet) can submit hashes. Read functions are public.
 
 ---
 
