@@ -68,6 +68,15 @@ function setupWorkerEvents(worker: Worker, name: string) {
   });
 }
 
+const MAX_DECIMAL_15_2 = 9999999999999.99;
+
+function safeDecimal(val: number | null | undefined): number | null {
+  if (val == null || isNaN(val)) return null;
+  if (val > MAX_DECIMAL_15_2) return MAX_DECIMAL_15_2;
+  if (val < -MAX_DECIMAL_15_2) return -MAX_DECIMAL_15_2;
+  return Math.round(val * 100) / 100;
+}
+
 async function processOCR(receiptId: string) {
   console.log(`[OCR] Processing receipt: ${receiptId}`);
 
@@ -106,11 +115,11 @@ async function processOCR(receiptId: string) {
         merchantPhone: ocrResult.merchantPhone,
         receiptNumber: ocrResult.receiptNumber,
         transactionDate: ocrResult.transactionDate,
-        subtotal: ocrResult.subtotal,
-        taxAmount: ocrResult.taxAmount,
-        taxRate: ocrResult.taxRate,
-        discountAmount: ocrResult.discountAmount,
-        totalAmount: ocrResult.totalAmount,
+        subtotal: safeDecimal(ocrResult.subtotal),
+        taxAmount: safeDecimal(ocrResult.taxAmount),
+        taxRate: safeDecimal(ocrResult.taxRate),
+        discountAmount: safeDecimal(ocrResult.discountAmount),
+        totalAmount: safeDecimal(ocrResult.totalAmount) ?? 0,
         currency: ocrResult.currency,
         paymentMethod: ocrResult.paymentMethod,
         lineItems: JSON.parse(JSON.stringify(ocrResult.lineItems)),
