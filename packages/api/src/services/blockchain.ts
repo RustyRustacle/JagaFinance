@@ -97,14 +97,13 @@ export async function submitReceiptToBlockchain(
 
 export async function getBlockchainReceipt(
   receiptHash: string
-): Promise<{ receiptHash: string; tenantId: string; timestamp: number; exists: boolean } | null> {
+): Promise<{ tenantId: string; timestamp: number; exists: boolean } | null> {
   if (!CONTRACT_ADDRESS) return null;
 
   try {
     const c = getContract();
     const record = await c.getReceipt(receiptHash);
     return {
-      receiptHash: record.receiptHash,
       tenantId: record.tenantId,
       timestamp: Number(record.timestamp),
       exists: record.exists,
@@ -115,13 +114,15 @@ export async function getBlockchainReceipt(
 }
 
 export async function getTenantBlockchainReceipts(
-  tenantId: string
+  tenantId: string,
+  offset: number = 0,
+  limit: number = 100
 ): Promise<string[]> {
   if (!CONTRACT_ADDRESS) return [];
 
   try {
     const c = getContract();
-    const hashes = await c.getTenantReceipts(tenantId);
+    const hashes = await c.getTenantReceipts(tenantId, offset, limit);
     return hashes as string[];
   } catch {
     return [];
